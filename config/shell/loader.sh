@@ -49,28 +49,30 @@ _load_dir() {
   fi
 }
 
-# _load_local LO HI — source $DOTFILES_LOCAL/NN-*.sh where NN (00–99) is in [LO, HI].
-# Flat per-user drop-ins; number sets load phase (see docs/NAMING.md).
-_load_local() {
-  local lo=$1 hi=$2 d="${DOTFILES_LOCAL:-}" f base nn
-  [ -d "$d" ] || return 0
-  if [ -n "${ZSH_VERSION:-}" ]; then
-    eval 'for f in "$d"/[0-9][0-9]-*.sh(N); do
-      base=${f##*/}; nn=${base%%-*}
-      [ "$nn" -ge "'"$lo"'" ] && [ "$nn" -le "'"$hi"'" ] || continue
-      _load_file "$f"
-    done'
-  else
-    local _ng
-    _ng=$(shopt -p nullglob 2>/dev/null)
-    shopt -s nullglob 2>/dev/null
-    for f in "$d"/[0-9][0-9]-*.sh; do
-      base=${f##*/}; nn=${base%%-*}
-      [ "$nn" -ge "$lo" ] && [ "$nn" -le "$hi" ] || continue
-      _load_file "$f"
-    done
-    eval "${_ng:-}"
+# _dotfiles_active_profile — name from $DOTFILES_PROFILE or $DOTFILES_LOCAL/active.
+_dotfiles_active_profile() {
+  if [ -n "${DOTFILES_PROFILE:-}" ]; then
+    printf '%s' "$DOTFILES_PROFILE"
+    return 0
   fi
+  if [ -r "${DOTFILES_LOCAL:-}/active" ]; then
+    head -n1 "${DOTFILES_LOCAL}/active" 2>/dev/null | tr -d '[:space:]'
+  fi
+}
+
+# _load_profile PHASE — source $DOTFILES_LOCAL/<active>/PHASE.sh (fixed basenames).
+# Phases: secrets login aliases tools company (see docs/NAMING.md).
+# Whole profile skipped when its directory name is in $DOTFILES_DISABLE.
+_load_profile() {
+  local phase=$1 name dir f
+  name="$(_dotfiles_active_profile)"
+  [ -n "$name" ] || return 0
+  _dotfiles_disabled "$name" && return 0
+  dir="${DOTFILES_LOCAL:-}/$name"
+  [ -d "$dir" ] || return 0
+  f="$dir/$phase.sh"
+  [ -r "$f" ] || return 0
+  . "$f"
 }
 
 # _eval_cached NAME "CMD …" — zsh only.

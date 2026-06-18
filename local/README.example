@@ -1,18 +1,20 @@
-# local/ — flat per-user drop-ins (only *.example templates are tracked).
+# local/ — per-user profile dirs (template: local/example/ is tracked in git).
 #
-# Real files:  NN-name.sh     e.g. 00-secrets.sh, 40-company.sh
-# Templates:    LO-HI-name.example   (range in the filename = when it loads)
+# Layout (fixed basenames per profile):
+#   local/<name>/secrets.sh   every shell (env, PATH; scripts too)
+#   local/<name>/login.sh       login zsh only
+#   local/<name>/aliases.sh     interactive aliases
+#   local/<name>/tools.sh       per-tool hooks (after compinit)
+#   local/<name>/company.sh     work / employer env (interactive, last)
 #
-# Ranges:
-#   00–09  every shell (env, secrets)          00-09-secrets.example
-#   10–19  login zsh only                      10-19-login.example
-#   20–29  interactive aliases                 20-29-aliases.example
-#   30–39  per-tool hooks (after compinit)     30-39-tools.example
-#   40–99  company / personal (last)           40-99-company.example
+# Root files:
+#   local/active                one line: profile name (dotfiles use <name>)
+#   local/disabled              module toggles (dotfiles disable <profile>)
 #
 # Quick start:
-#   cp local/00-09-secrets.example  local/00-secrets.sh
-#   cp local/40-99-company.example  local/40-company.sh
+#   cp -r local/example local/gfs
+#   dotfiles use gfs
 #   exec zsh
 #
-# Real *.sh files are gitignored. Keep drop-ins SILENT (no echo).
+# local/example/ is the tracked template. Real profiles (gfs/, etc.) and
+# local/active are gitignored. Keep drop-ins SILENT (no echo).

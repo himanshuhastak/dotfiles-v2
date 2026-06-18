@@ -43,7 +43,7 @@ export DOTFILES_DIR
 export TOOLS_DIR="$DOTFILES_DIR/var/tools"
 export SHELDON_DATA_DIR="${SHELDON_DATA_DIR:-$DOTFILES_DIR/var/vendor}"
 
-# Per-user overrides: flat $DOTFILES_LOCAL/NN-name.sh drop-ins (see docs/NAMING.md).
+# Per-user overrides: $DOTFILES_LOCAL/<profile>/{secrets,login,...}.sh (see docs/NAMING.md).
 export DOTFILES_LOCAL="${DOTFILES_LOCAL:-$DOTFILES_DIR/local}"
 
 # Persisted module toggles (managed by `dotfiles disable|enable <name>`).
@@ -79,4 +79,4 @@ if [ -d "$DOTFILES_DIR/man" ]; then
 fi
 
 # Machine env + secrets (untracked). Loaded in ALL shells (incl. scripts). Silent.
-_load_local 0 9
+_load_profile secrets

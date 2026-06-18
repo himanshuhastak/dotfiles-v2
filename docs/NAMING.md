@@ -34,44 +34,55 @@
 - `00-env.sh` folds that file into `$DOTFILES_DISABLE`; `_load_file` skips matching
   modules. `dotfiles enable <name>` removes it. Re-`reload` to apply.
 
-## Local overrides (`$DOTFILES_DIR/local/`)
+## Local profiles (`$DOTFILES_DIR/local/`)
 
-`$DOTFILES_LOCAL` defaults to `$DOTFILES_DIR/local`. Only `*.example` templates are
-tracked; copy a template to `NN-name.sh` (e.g. `00-09-secrets.example` →
-`00-secrets.sh`) — your copies are gitignored.
+`$DOTFILES_LOCAL` defaults to `$DOTFILES_DIR/local`. The tracked template is
+`local/example/`; real profile dirs (`local/gfs/`, etc.) and `local/active` are
+gitignored.
 
-**Pattern:** `NN-name.sh` — e.g. `00-secrets.sh`, `40-company.sh`, `41-client.sh`.
-The number sets when the file loads; the name is yours (and the id for
-`dotfiles disable <name>`).
+### Layout
 
-| Range | Template | Real file example |
+```
+local/
+  active                 one line: profile name (managed by `dotfiles use`)
+  disabled               module toggles (`dotfiles disable`)
+  example/               tracked template — copy to `local/<your-profile>/`
+    secrets.sh
+    login.sh
+    aliases.sh
+    tools.sh
+    company.sh
+  gfs/                   real profile (gitignored, not pushed)
+```
+
+### Fixed drop-in names (per profile)
+
+| File | When loaded | Use for |
 |---|---|---|
-| `00–09` | `00-09-secrets.example` | `00-secrets.sh` |
-| `10–19` | `10-19-login.example` | `10-login.sh` |
-| `20–29` | `20-29-aliases.example` | `20-personal.sh` |
-| `30–39` | `30-39-tools.example` | `30-mytool.sh` |
-| `40–99` | `40-99-company.example` | `40-company.sh` |
+| `secrets.sh` | every shell | secrets, PATH, exports (scripts too) |
+| `login.sh` | login zsh | login-only setup |
+| `aliases.sh` | interactive | aliases |
+| `tools.sh` | interactive (after compinit) | per-tool hooks |
+| `company.sh` | interactive (last) | work / employer env |
 
-| Range | When loaded | Use for |
-|---|---|---|
-| `00–09` | every shell | secrets, PATH, exports (scripts too) |
-| `10–19` | login zsh | login-only setup |
-| `20–29` | interactive | aliases |
-| `30–39` | interactive (after compinit) | per-tool hooks |
-| `40–99` | interactive (last) | company / personal profile |
+Only create the files you need; missing phases are skipped.
 
-`local/disabled` — module toggles (`dotfiles disable`); not numbered.
-
-Quick start:
+### Activation
 
 ```sh
-cp local/00-09-secrets.example local/00-secrets.sh
-cp local/40-99-company.example local/40-company.sh
+cp -r local/example local/gfs
+dotfiles use gfs          # writes local/active
 exec zsh
 ```
 
-Multiple employers: add `40-company.sh`, `41-client.sh` — all in `40–99` load in order.
-Skip one on a machine with `dotfiles disable company`.
+Override for one session: `DOTFILES_PROFILE=gfs zsh -l`.
+
+Skip a profile on a machine: `dotfiles disable gfs`.
+
+### Multiple profiles
+
+Keep several dirs (`local/gfs/`, `local/personal/`) and switch with
+`dotfiles use <name>`. Only the active profile's drop-ins load.
 
 ## Host-specific tweaks (outside the repo)
 

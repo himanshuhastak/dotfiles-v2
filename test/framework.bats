@@ -9,9 +9,9 @@ setup() {
   export DOTFILES_LOCAL="$HOME/.config/dotfiles.local"
 }
 
-@test "loader defines _load_dir, _load_file, _defer, _eval_cached" {
+@test "loader defines _load_profile and _dotfiles_active_profile" {
   run bash -c '. "$DOTFILES_DIR/config/shell/loader.sh"
-    type _load_dir _load_file _defer >/dev/null'
+    type _load_profile _dotfiles_active_profile >/dev/null'
   [ "$status" -eq 0 ]
 }
 
@@ -57,11 +57,12 @@ setup() {
   [[ "$output" == *"/config/zsh"* ]]
 }
 
-@test "login zsh sources .zprofile from ZDOTDIR" {
+@test "login zsh sources profile login.sh from ZDOTDIR" {
   command -v zsh >/dev/null || skip "zsh not installed"
   ln -s "$DOTFILES_DIR/config/stow/home/.zshenv" "$HOME/.zshenv"
-  mkdir -p "$DOTFILES_LOCAL"
-  printf '%s\n' 'print zprofile-local-ran' > "$DOTFILES_LOCAL/10-test.sh"
+  mkdir -p "$DOTFILES_DIR/local/testprof"
+  printf '%s\n' 'print zprofile-local-ran' > "$DOTFILES_DIR/local/testprof/login.sh"
+  printf '%s\n' 'testprof' > "$DOTFILES_DIR/local/active"
   run env -i HOME="$HOME" USER=test LOGNAME=test TERM=xterm-256color zsh -l -c 'print done'
   [ "$status" -eq 0 ]
   [[ "$output" == *"zprofile-local-ran"* ]]

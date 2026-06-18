@@ -45,6 +45,9 @@ run the bats smoke tests in test/
 .B bench [N]
 benchmark interactive zsh startup (N runs, default 10)
 .TP
+.B use [name]
+list/set the active local profile (see: dotfiles use)
+.TP
 .B profile
 start a zsh that prints a zprof startup timing report
 .TP
@@ -62,8 +65,11 @@ ZDOTDIR: zsh startup files.
 Generated, gitignored tools/plugins/cache.
 .TP
 .B $DOTFILES_LOCAL
-Flat NN-name.sh drop-ins (00–99). Only *.example templates are tracked;
-Templates: LO-HI-name.example (range in name). Real files: NN-name.sh.
+Per-user profile dirs: $DOTFILES_LOCAL/<name>/{secrets,login,aliases,tools,company}.sh.
+Template: $DOTFILES_LOCAL/example/ (tracked). Real profiles and active are gitignored.
+.TP
+.B $DOTFILES_LOCAL/active
+One-line file naming the profile to load (dotfiles use).
 .TP
 .B $DOTFILES_LOCAL/disabled
 Persisted module toggles (dotfiles disable).
