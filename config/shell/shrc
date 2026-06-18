@@ -1,0 +1,27 @@
+# config/shell/shrc — portable interactive shell base for BASH.
+#
+# zsh does NOT use this file: its env comes from $ZDOTDIR/.zshenv and its
+# interactive setup from $ZDOTDIR/.zshrc (which loads the zsh modules + drop-ins
+# in the correct, compinit-aware order). This file exists so an interactive bash
+# (the archived ~/.bashrc.bkp fallback) still gets the shared framework. Keep it
+# POSIX-ish: no zsh-only or bash-only syntax beyond the guarded section.
+#
+# Source it by path (it is NOT stowed into $HOME):
+#   . "$DOTFILES_DIR/config/shell/shrc"
+
+: "${DOTFILES_DIR:=$HOME/dotfiles_v2}"
+_sh="$DOTFILES_DIR/config/shell"
+[ -r "$_sh/loader.sh" ]            && . "$_sh/loader.sh"
+[ -r "$_sh/core/00-env.sh" ]       && . "$_sh/core/00-env.sh"
+[ -r "$_sh/core/10-functions.sh" ] && . "$_sh/core/10-functions.sh"
+[ -r "$_sh/core/20-aliases.sh" ]   && . "$_sh/core/20-aliases.sh"
+unset _sh
+
+# Tool drop-ins (bash gets them here; zsh loads them after compinit instead).
+if [ -n "${BASH_VERSION:-}" ]; then
+  _load_dir "$DOTFILES_DIR/config/shell/conf.d"
+  _load_dir "$DOTFILES_LOCAL/conf.d"
+fi
+
+# Personal aliases (untracked).
+source_r "$DOTFILES_LOCAL/aliases.local"

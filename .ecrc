@@ -1,0 +1,15 @@
+{
+  "Exclude": [
+    "var/",
+    "\\.zwc$",
+    "^man/",
+    "\\.1$",
+    "LICENSE",
+    "\\.git/"
+  ],
+  "Disable": {
+    "Indentation": true,
+    "IndentSize": true,
+    "MaxLineLength": true
+  }
+}

@@ -1,0 +1,14 @@
+# betterleaks config for this repo (CEL-based). Extends the upstream default
+# rules; we only add a prefilter so the generated/vendored trees aren't scanned.
+# `dotfiles audit` runs `betterleaks dir .` from the repo root.
+
+# Skip generated/binary paths before any expensive regex matching.
+prefilter = '''
+filter.matchesAny(attributes[?"path"].orValue(""), [
+  r"""(?:^|/)var/.*""",
+  r"""(?:^|/)man/.*""",
+  r"""\.zwc$""",
+  r"""(?:^|/)\.git/.*""",
+  r"""(?i)\.(?:ttf|otf|png|jpe?g|gif|pdf|gz|xz|zip|woff2?)$"""
+])
+'''
