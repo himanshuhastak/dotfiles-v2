@@ -25,4 +25,4 @@ case $- in *i*) ;; *) return ;; esac
 # [[ -n "${LANG:-}" ]] && _env+=( "LANG=$LANG" )
 # [[ -n "${LC_ALL:-}" ]] && _env+=( "LC_ALL=$LC_ALL" )
 # exec env "${_env[@]}" "$_zsh" -l
-exec $HOME/dotfiles_v2/var/tools/bin/zsh
+exec $HOME/dotfiles-v2/var/tools/bin/zsh
