@@ -21,7 +21,7 @@ Steps (see `install/steps/`):
    quality tools `shellcheck`, `shfmt`, `bats`, `zshellcheck` (zsh linter),
    `betterleaks` (secrets), `actionlint`, `editorconfig-checker`. Self-owned;
    never reuses system/NFS binaries.
-4. **install-zellij-plugins** — downloads `zsm`, `zjstatus`, `zjframes`, `monocle`
+4. **install-zellij-plugins** — downloads `zsm`, `zjframes`, `monocle`
    into `var/vendor/zellij-plugins/` and symlinks them into the zellij stow package.
 5. **stow-dotfiles** — symlinks the `config/stow/*` packages into `$HOME`
    (notably `~/.zshenv`, the ZDOTDIR bootstrap).

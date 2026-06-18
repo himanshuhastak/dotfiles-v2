@@ -1,41 +1,4 @@
-// Default workspace — zjstatus status/tab bar (Catppuccin Mocha).
+// Default workspace — built-in tab-bar + status-bar (Catppuccin Mocha theme).
 layout {
-    default_tab_template {
-        children
-        pane size=1 borderless=true {
-            plugin location="file:~/.config/zellij/plugins/zjstatus.wasm" {
-                format_left   "{mode} #[fg=#89b4fa,bold]{session}"
-                format_center "{tabs}"
-                format_right  "{command_git_branch} {datetime}"
-                format_space  ""
-
-                border_enabled  "false"
-                border_char     "─"
-                border_format   "#[fg=#6c7086]{char}"
-                border_position "top"
-
-                hide_frame_for_single_pane "true"
-
-                mode_normal "#[bg=#89b4fa,fg=#1e1e2e] NORMAL "
-                mode_locked "#[bg=#6c7086,fg=#1e1e2e] LOCKED "
-                mode_pane   "#[bg=#fab387,fg=#1e1e2e] PANE "
-                mode_tab    "#[bg=#cba6f7,fg=#1e1e2e] TAB "
-                mode_scroll "#[bg=#94e2d5,fg=#1e1e2e] SCROLL "
-                mode_tmux   "#[bg=#f9e2af,fg=#1e1e2e] TMUX "
-
-                tab_normal "#[fg=#6c7086] {name} "
-                tab_active "#[fg=#cdd6f4,bold] {name} "
-
-                command_git_branch_command    "git rev-parse --abbrev-ref HEAD 2>/dev/null"
-                command_git_branch_format     "#[fg=#a6e3a1] {stdout} "
-                command_git_branch_interval   "10"
-                command_git_branch_rendermode "static"
-
-                datetime          "#[fg=#6c7086] {format} "
-                datetime_format   "%a %d %b %H:%M"
-                datetime_timezone "Asia/Kolkata"
-            }
-        }
-    }
     pane
 }
