@@ -1,0 +1,24 @@
+# Run the linters/secret-scanner on staged files before each commit.
+#   pip install pre-commit && pre-commit install
+# Pinned revs for reproducibility — bump with `pre-commit autoupdate`.
+repos:
+  - repo: https://github.com/koalaman/shellcheck-precommit
+    rev: v0.10.0
+    hooks:
+      - id: shellcheck
+        args: [-x]
+
+  - repo: https://github.com/afadesigns/zshellcheck
+    rev: v1.7.0
+    hooks:
+      - id: zshellcheck
+
+  - repo: https://github.com/betterleaks/betterleaks
+    rev: v1.5.0
+    hooks:
+      - id: betterleaks
+
+  - repo: https://github.com/rhysd/actionlint
+    rev: v1.7.7
+    hooks:
+      - id: actionlint

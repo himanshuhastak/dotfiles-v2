@@ -1,0 +1,10 @@
+#autoload
+# clipcopy — copy data to the system clipboard (cross-platform).
+#   clipcopy <file>   copies the file's contents
+#   ... | clipcopy    copies stdin
+# On first use this bootstraps the platform-specific implementation via
+# detect-clipboard, then re-runs the real function.
+emulate -L zsh
+unfunction clipcopy clippaste 2>/dev/null
+detect-clipboard || true
+clipcopy "$@"

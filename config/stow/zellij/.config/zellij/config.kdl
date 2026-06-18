@@ -1,0 +1,30 @@
+// Catppuccin Mocha — built-in tab-bar + status-bar.
+// Optional WASM plugins (zjframes, zsm, monocle): install/steps/install-zellij-plugins.sh
+
+theme "catppuccin-mocha"
+default_shell "zsh"
+default_layout "default"
+show_startup_tips false
+pane_frames true
+mouse_mode true
+copy_on_select true
+
+// NFS-shared home: avoid constant session writes from multiple hosts.
+session_serialization false
+serialize_pane_viewport false
+
+plugins {
+    tab-bar          location="zellij:tab-bar"
+    status-bar       location="zellij:status-bar"
+    strider          location="zellij:strider"
+    compact-bar      location="zellij:compact-bar"
+    session-manager  location="zellij:session-manager"
+    welcome-screen   location="zellij:session-manager" {
+        welcome_screen true
+    }
+    filepicker       location="zellij:strider" {
+        cwd "/"
+    }
+    configuration    location="zellij:configuration"
+    plugin-manager   location="zellij:plugin-manager"
+}

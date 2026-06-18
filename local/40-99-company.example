@@ -1,0 +1,8 @@
+# 40–99: company / personal profile (interactive last). Copy to 40-company.sh.
+# Add 41-client.sh etc. for more employers — all load in numeric order.
+#
+# export WORK_ROOT="$HOME/work/company"
+# _path_prepend "/opt/company/bin"; export PATH
+#
+# work-ssh() { ssh login.company.internal "$@"; }
+# alias k='kubectl -n company-dev'

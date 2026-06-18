@@ -1,0 +1,71 @@
+.TH DOTFILES 1 "2026-06-18" "dotfiles" "Dotfiles Manual"
+.SH NAME
+dotfiles \- manage the dotfiles shell framework
+.SH SYNOPSIS
+.B dotfiles
+.RI [ command ] " " [ args ...]
+.SH DESCRIPTION
+Manage a stow-based, ZDOTDIR shell framework: toggle modules, (re)create
+symlinks, byte-compile for speed, run health checks, lint, test and benchmark.
+.SH COMMANDS
+.TP
+.B list
+list modules and their on/off state
+.TP
+.B enable <name>...
+re-enable module(s) (persists)
+.TP
+.B disable <name>...
+disable module(s) (persists)
+.TP
+.B reload
+recompile, then re-exec the current shell
+.TP
+.B update
+git pull --ff-only, then re-run install.sh
+.TP
+.B compile
+byte-compile the zsh framework (.zwc) for faster startup
+.TP
+.B stow [--if-needed]
+(re)create the dotfiles symlinks via stow
+.TP
+.B doctor
+health checks (paths, symlinks, core tools, var/)
+.TP
+.B check
+lint scripts (shellcheck .sh + zsh -n/zshellcheck .zsh + actionlint + editorconfig)
+.TP
+.B audit
+scan the working tree for secrets (betterleaks)
+.TP
+.B test
+run the bats smoke tests in test/
+.TP
+.B bench [N]
+benchmark interactive zsh startup (N runs, default 10)
+.TP
+.B profile
+start a zsh that prints a zprof startup timing report
+.TP
+.B doc [man]
+regenerate the man page from this help
+.TP
+.B help
+show this help
+.SH FILES
+.TP
+.B $DOTFILES_DIR/config/zsh
+ZDOTDIR: zsh startup files.
+.TP
+.B $DOTFILES_DIR/var
+Generated, gitignored tools/plugins/cache.
+.TP
+.B $DOTFILES_LOCAL
+Flat NN-name.sh drop-ins (00–99). Only *.example templates are tracked;
+Templates: LO-HI-name.example (range in name). Real files: NN-name.sh.
+.TP
+.B $DOTFILES_LOCAL/disabled
+Persisted module toggles (dotfiles disable).
+.SH SEE ALSO
+stow(8), zsh(1), starship(1), sheldon(1)

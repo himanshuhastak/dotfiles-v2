@@ -1,0 +1,208 @@
+# Catppuccin Mocha — simplified layout, original OS symbol map.
+"$schema" = 'https://starship.rs/config-schema.json'
+
+scan_timeout = 10000
+command_timeout = 1000
+
+format = """
+$os\
+$hostname\
+$directory\
+$git_branch\
+$time\
+$git_status\
+$c\
+$rust\
+$golang\
+$nodejs\
+$bun\
+$php\
+$java\
+$kotlin\
+$haskell\
+$python\
+$docker_context\
+$conda\
+$cmd_duration\
+$line_break\
+$character"""
+
+palette = "catppuccin_mocha"
+
+[os]
+disabled = false
+style = "red"
+format = "[$symbol]($style)"
+
+[os.symbols]
+Windows = ""
+Ubuntu = "󰕈"
+SUSE = ""
+Raspbian = "󰐿"
+Mint = "󰣭"
+Macos = "󰀵"
+Manjaro = ""
+Linux = "󰌽"
+Gentoo = "󰣨"
+Fedora = "󰣛"
+Alpine = ""
+Amazon = ""
+Android = ""
+AOSC = ""
+Arch = "󰣇"
+Artix = "󰣇"
+CentOS = ""
+Debian = "󰣚"
+Redhat = "󱄛"
+RedHatEnterprise = "󱄛"
+
+[hostname]
+ssh_only = false
+trim_at = "."
+style = "subtext0"
+format = " [$hostname]($style)"
+
+[directory]
+style = "bold text"
+format = " [$path]($style)"
+truncation_length = 0
+truncate_to_repo = false
+read_only = " 🔒"
+
+[directory.substitutions]
+"Documents" = "󰈙 "
+"Downloads" = " "
+"Music" = "󰝚 "
+"Pictures" = " "
+"Developer" = "󰲋 "
+
+[git_branch]
+symbol = ""
+style = "mauve"
+format = " [$symbol $branch]($style)"
+
+[git_status]
+style = "subtext0"
+format = "[$all_status$ahead_behind]($style)"
+use_git_executable = true   # optional: match `git status` exactly on odd setups
+untracked = "?${count}"
+modified = "!${count}"
+staged = "+${count}"
+deleted = "✘${count}"
+renamed = "»${count}"
+stashed = "$"
+ahead = "⇡${count}"
+behind = "⇣${count}"
+diverged = "⇕⇡${ahead_count}⇣${behind_count}"
+
+[time]
+disabled = false
+time_format = "%R"
+style = "overlay0"
+format = " [ $time]($style)"
+
+[c]
+symbol = ""
+style = "subtext0"
+format = " [$symbol$version]($style)"
+
+[rust]
+symbol = ""
+style = "subtext0"
+format = " [$symbol$version]($style)"
+
+[golang]
+symbol = ""
+style = "subtext0"
+format = " [$symbol$version]($style)"
+
+[nodejs]
+symbol = ""
+style = "subtext0"
+format = " [$symbol$version]($style)"
+
+[bun]
+symbol = ""
+style = "subtext0"
+format = " [$symbol$version]($style)"
+
+[php]
+symbol = ""
+style = "subtext0"
+format = " [$symbol$version]($style)"
+
+[java]
+symbol = ""
+style = "subtext0"
+format = " [$symbol$version]($style)"
+
+[kotlin]
+symbol = ""
+style = "subtext0"
+format = " [$symbol$version]($style)"
+
+[haskell]
+symbol = ""
+style = "subtext0"
+format = " [$symbol$version]($style)"
+
+[python]
+symbol = ""
+style = "subtext0"
+format = " [$symbol$version]($style)"
+
+[docker_context]
+symbol = ""
+style = "subtext0"
+format = " [$symbol$context]($style)"
+
+[conda]
+symbol = " "
+style = "subtext0"
+format = "[$symbol$environment]($style)"
+ignore_base = true
+
+[cmd_duration]
+disabled = false
+min_time = 3_000
+style = "overlay0"
+format = " ·  [$duration]($style)"
+
+[line_break]
+disabled = true
+
+[character]
+success_symbol = "[❯](peach)"
+error_symbol = "[❯](red)"
+vimcmd_symbol = "[❮](subtext1)"
+
+[username]
+disabled = true
+
+[palettes.catppuccin_mocha]
+rosewater = "#f5e0dc"
+flamingo = "#f2cdcd"
+pink = "#f5c2e7"
+mauve = "#cba6f7"
+red = "#f38ba8"
+maroon = "#eba0ac"
+peach = "#fab387"
+yellow = "#f9e2af"
+green = "#a6e3a1"
+teal = "#94e2d5"
+sky = "#89dceb"
+sapphire = "#74c7ec"
+blue = "#89b4fa"
+lavender = "#b4befe"
+text = "#cdd6f4"
+subtext1 = "#bac2de"
+subtext0 = "#a6adc8"
+overlay2 = "#9399b2"
+overlay1 = "#7f849c"
+overlay0 = "#6c7086"
+surface2 = "#585b70"
+surface1 = "#45475a"
+surface0 = "#313244"
+base = "#1e1e2e"
+mantle = "#181825"
+crust = "#11111b"

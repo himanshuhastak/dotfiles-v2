@@ -1,0 +1,23 @@
+# ~/.taskrc — managed by dotfiles (stow)
+data.location=~/.task
+
+urgency.user.tag.next.coefficient=15.0
+urgency.due.coefficient=12.0
+urgency.blocking.coefficient=8.0
+urgency.active.coefficient=10.0
+
+report.next.columns=id,start.age,entry.age,depends,priority,project,tags,recur,scheduled.countdown,due.relative,until.remaining,description,urgency
+report.next.labels=ID,Active,Age,Deps,P,Project,Tag,Recur,S,Due,Until,Description,Urg
+
+report.today.description=Tasks due or scheduled today
+report.today.columns=id,priority,project,tags,due.relative,description
+report.today.labels=ID,P,Project,Tag,Due,Description
+report.today.filter=(due.before:tomorrow or scheduled.before:tomorrow) and status:pending
+
+confirmation=no
+nag=
+search.case.sensitive=no
+color=on
+rule.color.merge=no
+
+include /dev/null

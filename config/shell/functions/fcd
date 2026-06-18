@@ -1,0 +1,9 @@
+#autoload
+# fcd — fuzzy-cd into a subdirectory chosen interactively with fzf.
+emulate -L zsh
+(( $+commands[fzf] )) || { print -u2 "fcd: needs fzf"; return 1; }
+local finder dir
+if (( $+commands[fd] )); then finder='fd --type d --hidden --follow --exclude .git'
+else                          finder='find . -type d -not -path "*/.git/*"'; fi
+dir=$(eval "$finder" 2>/dev/null | fzf +m --prompt 'cd> ') || return
+[[ -n $dir ]] && builtin cd -- "$dir"

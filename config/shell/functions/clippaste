@@ -1,0 +1,10 @@
+#autoload
+# clippaste — write the system clipboard's contents to stdout (cross-platform).
+#   clippaste > file     dump clipboard to a file
+#   clippaste | cmd      pipe clipboard into another command
+# On first use this bootstraps the platform-specific implementation via
+# detect-clipboard, then re-runs the real function.
+emulate -L zsh
+unfunction clipcopy clippaste 2>/dev/null
+detect-clipboard || true
+clippaste "$@"

@@ -1,0 +1,4 @@
+// Default workspace — built-in tab-bar + status-bar (Catppuccin Mocha theme).
+layout {
+    pane
+}
