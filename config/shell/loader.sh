@@ -49,6 +49,30 @@ _load_dir() {
   fi
 }
 
+# _load_local LO HI — source $DOTFILES_LOCAL/NN-*.sh where NN (00–99) is in [LO, HI].
+# Flat per-user drop-ins; number sets load phase (see docs/NAMING.md).
+_load_local() {
+  local lo=$1 hi=$2 d="${DOTFILES_LOCAL:-}" f base nn
+  [ -d "$d" ] || return 0
+  if [ -n "${ZSH_VERSION:-}" ]; then
+    eval 'for f in "$d"/[0-9][0-9]-*.sh(N); do
+      base=${f##*/}; nn=${base%%-*}
+      [ "$nn" -ge "'"$lo"'" ] && [ "$nn" -le "'"$hi"'" ] || continue
+      _load_file "$f"
+    done'
+  else
+    local _ng
+    _ng=$(shopt -p nullglob 2>/dev/null)
+    shopt -s nullglob 2>/dev/null
+    for f in "$d"/[0-9][0-9]-*.sh; do
+      base=${f##*/}; nn=${base%%-*}
+      [ "$nn" -ge "$lo" ] && [ "$nn" -le "$hi" ] || continue
+      _load_file "$f"
+    done
+    eval "${_ng:-}"
+  fi
+}
+
 # _eval_cached NAME "CMD …" — zsh only.
 # Cache the output of `eval CMD` (e.g. a tool's `init` shell snippet) and source
 # the cache instead of spawning a subshell every startup. Regenerates only when

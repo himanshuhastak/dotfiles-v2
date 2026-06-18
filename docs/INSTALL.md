@@ -56,7 +56,9 @@ rm -rf var && ./install.sh
 | tools | `var/tools/bin` (on `PATH`) |
 | plugins | `var/vendor` |
 | caches/state | `~/.cache`, `~/.local/state` (XDG) — **not** in `var/` |
-| secrets/overrides | `$DOTFILES_LOCAL` (`~/.config/dotfiles.local`) |
+| secrets/overrides | `$DOTFILES_LOCAL` — flat `local/NN-name.sh` (see NAMING.md) |
+
+Copy `local/LO-HI-name.example` to `NN-name.sh` — your copies are gitignored.
 
 ## Uninstall
 

@@ -4,6 +4,7 @@
 
 ```
 dotfiles_v2/
+  local/                      flat NN-name.sh per-user overrides (*.example tracked)
   install.sh                  thin wrapper -> install/bootstrap.sh
   bin/dotfiles                management CLI (on PATH via $DOTFILES_DIR/bin)
   Makefile                    convenience targets (wrap the CLI)
@@ -22,7 +23,7 @@ dotfiles_v2/
       conf.d/                 per-tool drop-ins (fzf, atuin, zoxide, starship, …)
       completions/            extra _foo completion functions (on fpath)
       functions/              autoloaded zsh functions (one per file)
-      profiles/               work/company profiles (interactive only)
+      profiles/               example drop-in for local/40-company.sh
   install/                    the installer
     bootstrap.sh common.sh cleanup.sh
     bin/ (stow)  steps/  tools/
@@ -45,13 +46,14 @@ per-file zsh symlinks.
 
 ## Startup / load order
 
-`.zshenv` (every zsh): `loader.sh` → `core/00-env.sh` (env + PATH; silent).
+`.zshenv` (every zsh): `loader.sh` → `core/00-env.sh` → `local/00–09*.sh`.
 
-`.zprofile` (login only): `dotfiles stow --if-needed` (sync self-heal) → local
-overrides (`~/.zprofile.$USER`, `$DOTFILES_LOCAL/zprofile.local`).
+`.zprofile` (login only): `dotfiles stow --if-needed` → `local/10–19*.sh` →
+`~/.zprofile.$USER`.
 
 `.zshrc` (interactive): `core/10-functions.sh` → `core/20-aliases.sh` →
-`config/shell/zsh/*` in numeric order → `conf.d/*` → work profile.
+`local/20–29*.sh` → `config/shell/zsh/*` → `conf.d/*` → `local/30–39*.sh` →
+`local/40–99*.sh`.
 
 zsh modules load in this order:
 

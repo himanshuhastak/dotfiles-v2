@@ -43,8 +43,8 @@ export DOTFILES_DIR
 export TOOLS_DIR="$DOTFILES_DIR/var/tools"
 export SHELDON_DATA_DIR="${SHELDON_DATA_DIR:-$DOTFILES_DIR/var/vendor}"
 
-# Local (untracked) overrides live here: env.local, aliases.local, work.d/, conf.d/.
-export DOTFILES_LOCAL="${DOTFILES_LOCAL:-$XDG_CONFIG_HOME/dotfiles.local}"
+# Per-user overrides: flat $DOTFILES_LOCAL/NN-name.sh drop-ins (see docs/NAMING.md).
+export DOTFILES_LOCAL="${DOTFILES_LOCAL:-$DOTFILES_DIR/local}"
 
 # Persisted module toggles (managed by `dotfiles disable|enable <name>`).
 # One module name per line; folded into $DOTFILES_DISABLE before _load_dir runs.
@@ -78,6 +78,5 @@ if [ -d "$DOTFILES_DIR/man" ]; then
   esac
 fi
 
-# Machine env + secrets (untracked). Loaded in ALL shells (incl. scripts) so
-# tools that need tokens/paths work non-interactively. Must stay silent.
-source_r "$DOTFILES_LOCAL/env.local"
+# Machine env + secrets (untracked). Loaded in ALL shells (incl. scripts). Silent.
+_load_local 0 9

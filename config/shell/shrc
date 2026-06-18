@@ -20,8 +20,7 @@ unset _sh
 # Tool drop-ins (bash gets them here; zsh loads them after compinit instead).
 if [ -n "${BASH_VERSION:-}" ]; then
   _load_dir "$DOTFILES_DIR/config/shell/conf.d"
-  _load_dir "$DOTFILES_LOCAL/conf.d"
+  _load_local 30 39
 fi
 
-# Personal aliases (untracked).
-source_r "$DOTFILES_LOCAL/aliases.local"
+_load_local 20 29

@@ -61,7 +61,7 @@ setup() {
   command -v zsh >/dev/null || skip "zsh not installed"
   ln -s "$DOTFILES_DIR/config/stow/home/.zshenv" "$HOME/.zshenv"
   mkdir -p "$DOTFILES_LOCAL"
-  printf '%s\n' 'print zprofile-local-ran' > "$DOTFILES_LOCAL/zprofile.local"
+  printf '%s\n' 'print zprofile-local-ran' > "$DOTFILES_LOCAL/10-test.sh"
   run env -i HOME="$HOME" USER=test LOGNAME=test TERM=xterm-256color zsh -l -c 'print done'
   [ "$status" -eq 0 ]
   [[ "$output" == *"zprofile-local-ran"* ]]

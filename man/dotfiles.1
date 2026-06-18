@@ -61,7 +61,11 @@ ZDOTDIR: zsh startup files.
 .B $DOTFILES_DIR/var
 Generated, gitignored tools/plugins/cache.
 .TP
+.B $DOTFILES_LOCAL
+Flat NN-name.sh drop-ins (00–99). Only *.example templates are tracked;
+Templates: LO-HI-name.example (range in name). Real files: NN-name.sh.
+.TP
 .B $DOTFILES_LOCAL/disabled
-Persisted module toggles.
+Persisted module toggles (dotfiles disable).
 .SH SEE ALSO
 stow(8), zsh(1), starship(1), sheldon(1)

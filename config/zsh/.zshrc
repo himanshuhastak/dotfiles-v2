@@ -7,7 +7,7 @@
 # Portable shared base: functions + base aliases (env already done in .zshenv).
 source_r "$DOTFILES_DIR/config/shell/core/10-functions.sh"
 source_r "$DOTFILES_DIR/config/shell/core/20-aliases.sh"
-source_r "$DOTFILES_LOCAL/aliases.local"
+_load_local 20 29
 
 # Only interactive shells run the rest.
 [[ -o interactive ]] || return
@@ -21,12 +21,12 @@ source_r "$DOTFILES_LOCAL/aliases.local"
 _load_dir "$DOTFILES_DIR/config/shell/zsh" zsh
 
 # Per-tool drop-ins — loaded AFTER compinit so completion/key hooks register
-# correctly. Repo defaults first, then local/work overrides.
+# correctly. Repo defaults first, then local overrides.
 _load_dir "$DOTFILES_DIR/config/shell/conf.d"
-_load_dir "$DOTFILES_LOCAL/conf.d"
+_load_local 30 39
 
-# Interactive work profile (company-specific; not exported to scripts).
-source_r "$DOTFILES_DIR/config/shell/profiles/work.sh"
+# Company / personal profile (interactive only; not loaded in scripts).
+_load_local 40 99
 
 # Host/user-specific zsh-only tweaks (untracked, in $HOME — never the repo).
 [[ -r ~/.zshrc.$USER ]] && . ~/.zshrc.$USER

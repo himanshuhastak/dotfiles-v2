@@ -1,0 +1,18 @@
+# local/ — flat per-user drop-ins (only *.example templates are tracked).
+#
+# Real files:  NN-name.sh     e.g. 00-secrets.sh, 40-company.sh
+# Templates:    LO-HI-name.example   (range in the filename = when it loads)
+#
+# Ranges:
+#   00–09  every shell (env, secrets)          00-09-secrets.example
+#   10–19  login zsh only                      10-19-login.example
+#   20–29  interactive aliases                 20-29-aliases.example
+#   30–39  per-tool hooks (after compinit)     30-39-tools.example
+#   40–99  company / personal (last)           40-99-company.example
+#
+# Quick start:
+#   cp local/00-09-secrets.example  local/00-secrets.sh
+#   cp local/40-99-company.example  local/40-company.sh
+#   exec zsh
+#
+# Real *.sh files are gitignored. Keep drop-ins SILENT (no echo).

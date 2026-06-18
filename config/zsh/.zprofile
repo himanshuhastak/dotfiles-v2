@@ -6,4 +6,4 @@
 
 # Host/user login tweaks (untracked, in $HOME — never the repo).
 [[ -r ~/.zprofile.$USER ]] && . ~/.zprofile.$USER
-source_r "$DOTFILES_LOCAL/zprofile.local"
+_load_local 10 19

@@ -1,0 +1,4 @@
+# 30–39: per-tool hooks (after compinit). Copy to 30-mytool.sh (gitignored).
+#
+# command -v mytool >/dev/null 2>&1 || return 0
+# _defer 'eval "$(mytool init zsh)"'

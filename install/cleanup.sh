@@ -36,7 +36,7 @@ done
 XDG_CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/.config}"
 XDG_CACHE_HOME="${XDG_CACHE_HOME:-$HOME/.cache}"
 XDG_STATE_HOME="${XDG_STATE_HOME:-$HOME/.local/state}"
-LOCAL_DIR="${DOTFILES_LOCAL:-$XDG_CONFIG_HOME/dotfiles.local}"
+LOCAL_DIR="${DOTFILES_LOCAL:-$DOTFILES/local}"
 
 TS="$(date +%Y%m%d_%H%M%S)"
 DEST="${DOTFILES_BACKUP_ROOT:-$HOME/.dotfiles-backups}/$TS"

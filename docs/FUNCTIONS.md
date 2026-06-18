@@ -20,8 +20,8 @@ Loaded in **both** bash and zsh. Keep them POSIX-ish. Current set:
 
 zsh-only. **One function per file; the filename is the function name.** They are
 autoloaded (parsed lazily on first call), so adding more costs nothing at startup.
-`45-functions.zsh` puts `config/shell/functions` and `$DOTFILES_LOCAL/functions`
-on `fpath` and `autoload -Uz` each file.
+`45-functions.zsh` puts `config/shell/functions` on `fpath` and `autoload -Uz`
+each file. Define extra functions in `local/20-*.sh` or `local/40-*.sh` instead.
 
 Shipped examples:
 
