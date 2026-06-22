@@ -1,0 +1,155 @@
+#!/usr/bin/env bash
+# bin/dotfiles-profile — detailed startup profiling with per-module timing
+# Usage: dotfiles-profile [--sort time|module] [--format text|json]
+set -uo pipefail
+
+self="$(cd "$(dirname "$(readlink -f "$0" 2>/dev/null || echo "$0")")" && pwd)"
+DOTFILES_DIR="${DOTFILES_DIR:-${self%/bin}}"
+SHELL_DIR="$DOTFILES_DIR/config/shell"
+PROFILE_DIR="$DOTFILES_DIR/config/zsh"
+
+c_b=$'\033[1;34m'; c_r=$'\033[0m'; c_g=$'\033[1;32m'
+
+# Generate profiling wrapper
+_gen_profile_wrapper() {
+  cat <<'EOF'
+# Profiling wrapper — measures each module/tool hook
+declare -gA DOTFILES_TIMINGS
+
+_time_module() {
+  local name=$1 start end elapsed
+  start=$(date +%s%N)
+  shift
+  eval "$@"
+  end=$(date +%s%N)
+  elapsed=$(( (end - start) / 1000000 ))  # Convert ns to ms
+  DOTFILES_TIMINGS[$name]=$elapsed
+}
+
+# Wrap loader functions
+_load_file_timed() {
+  local f=$1 base
+  base=${f##*/}; base=${base%.*}
+  case "$base" in [0-9][0-9]-*) base=${base#??-} ;; esac
+  _time_module "$base" ". \"$f\""
+}
+
+_load_dir_timed() {
+  local d=$1 ext=${2:-sh} f
+  [ -d "$d" ] || return 0
+  for f in "$d"/*."$ext"; do
+    [ -r "$f" ] || continue
+    _load_file_timed "$f"
+  done
+}
+
+# Source modules with timing
+source "$DOTFILES_DIR/config/shell/loader.sh"
+source "$DOTFILES_DIR/config/shell/core/00-env.sh"
+_load_dir_timed "$SHELL_DIR/zsh" zsh
+_load_dir_timed "$SHELL_DIR/conf.d"
+
+# Print results
+{
+  echo "=== Dotfiles Startup Profile ==="
+  echo ""
+  printf "%-30s %8s %8s\n" "Module" "Time(ms)" "% Total"
+  echo "────────────────────────────────────────"
+  
+  local total=0
+  for module in "${!DOTFILES_TIMINGS[@]}"; do
+    total=$((total + DOTFILES_TIMINGS[$module]))
+  done
+  
+  for module in $(for m in "${!DOTFILES_TIMINGS[@]}"; do echo "$m"; done | sort); do
+    local ms=${DOTFILES_TIMINGS[$module]}
+    local pct=$((ms * 100 / total))
+    printf "%-30s %7dms %7d%%\n" "$module" "$ms" "$pct"
+  done
+  
+  echo "────────────────────────────────────────"
+  printf "%-30s %7dms %7d%%\n" "Total" "$total" "100"
+} >&2
+
+# Clean environment
+unset -f _load_file_timed _load_dir_timed _time_module
+unset DOTFILES_TIMINGS
+EOF
+}
+
+# Run profiler
+cmd_profile() {
+  local sort_by="${1:-time}"
+  local format="${2:-text}"
+  
+  # Generate temp wrapper
+  local wrapper=$(mktemp)
+  trap "rm -f $wrapper" EXIT
+  _gen_profile_wrapper > "$wrapper"
+  
+  echo "${c_b}Profiling shell startup...${c_r}"
+  
+  # Run profiled zsh
+  zsh -i -c "source $wrapper; exec zsh" 2>&1 | head -50
+}
+
+# Compare against baseline
+cmd_compare() {
+  local baseline="${1:-.dotfiles-profile-baseline}"
+  
+  if [ ! -f "$baseline" ]; then
+    warn "No baseline found. Create one: dotfiles-profile --save"
+    return 1
+  fi
+  
+  echo "Running current profile..."
+  cmd_profile > /tmp/current.profile 2>&1
+  
+  echo ""
+  echo "Comparing to baseline: $baseline"
+  diff -u "$baseline" /tmp/current.profile || true
+}
+
+# Save baseline
+cmd_save_baseline() {
+  local output="${1:-.dotfiles-profile-baseline}"
+  cmd_profile > "$output"
+  echo "Baseline saved to: $output"
+}
+
+usage() {
+  cat <<EOF
+${c_b}dotfiles-profile${c_r} — detailed startup profiling
+
+Usage: dotfiles-profile [command] [options]
+
+Commands:
+  run          Run profiler (default)
+  compare      Compare to baseline
+  save         Save current as baseline
+  help         Show this help
+
+Options:
+  --sort time|module    Sort by time or module name
+  --format text|json    Output format
+
+Examples:
+  dotfiles-profile
+  dotfiles-profile --sort time
+  dotfiles-profile save .baseline
+  dotfiles-profile compare .baseline
+EOF
+}
+
+main() {
+  local cmd="${1:-run}"
+  case "$cmd" in
+    run)     cmd_profile "${@:2}" ;;
+    compare) cmd_compare "${@:2}" ;;
+    save)    cmd_save_baseline "${@:2}" ;;
+    help)    usage ;;
+    *)       usage; exit 1 ;;
+  esac
+}
+
+main "$@"

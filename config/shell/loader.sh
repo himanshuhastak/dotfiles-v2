@@ -103,7 +103,7 @@ _init_tool_hook() {
     esac
   done
   
-  # Skip if tool not found
+  # Skip if tool not found (silent fail — tool is optional)
   if ! command -v "$tool" >/dev/null 2>&1; then
     return 0
   fi
@@ -123,14 +123,42 @@ _init_tool_hook() {
     init_cmd="$init_cmd ${flags[*]}"
   fi
   
-  # Execute via _defer or _eval_cached
+  # Execute via _defer or _eval_cached, with error handling
   if [ -n "${ZSH_VERSION:-}" ]; then
     if [ $defer -eq 1 ]; then
-      _defer "_eval_cached '$tool' '$init_cmd'"
+      _defer "_eval_cached_safe '$tool' '$init_cmd'"
     else
-      _eval_cached "$tool" "$init_cmd"
+      _eval_cached_safe "$tool" "$init_cmd"
     fi
   elif [ -n "${BASH_VERSION:-}" ]; then
-    eval "$($init_cmd)" 2>/dev/null
+    if ! eval "$($init_cmd)" 2>/dev/null; then
+      : # Silent fail for bash — tool init failed but shell continues
+    fi
+  fi
+}
+
+# _eval_cached_safe NAME "CMD" — wrapper with error handling
+_eval_cached_safe() {
+  [ -n "${ZSH_VERSION:-}" ] || return 0
+  local name=$1 cmd=$2 bin=${2%% *} cache
+  command -v "$bin" >/dev/null 2>&1 || return 0
+  cache="${XDG_CACHE_HOME:-$HOME/.cache}/dotfiles/init/$name.zsh"
+  
+  # Generate/use cache
+  if [[ ! -r "$cache" || "$(command -v "$bin")" -nt "$cache" ]]; then
+    command mkdir -p "${cache:h}"
+    if ! eval "$cmd" > "$cache" 2>/dev/null; then
+      # Cache generation failed — fall back to direct eval
+      eval "$cmd" 2>/dev/null || true
+      return 0
+    fi
+  fi
+  
+  # Source cache
+  if ! source "$cache" 2>/dev/null; then
+    # Cache is stale or corrupt — regenerate
+    if eval "$cmd" > "$cache" 2>/dev/null; then
+      source "$cache" 2>/dev/null || true
+    fi
   fi
 }

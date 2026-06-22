@@ -37,12 +37,15 @@ compile	byte-compile the zsh framework (.zwc) for faster startup
 stow [--if-needed]	(re)create the dotfiles symlinks via stow
 work-stow [--if-needed]	stow ~/Work links (from ~/bin/gfs/mount.lst)
 doctor	health checks (paths, symlinks, core tools, var/)
+doctor-tools	detailed tool health check (binaries, versions, hooks)
+validate	validate configuration integrity (syntax, symlinks, profiles)
 check	lint scripts (shellcheck .sh + zsh -n/zshellcheck .zsh + actionlint + editorconfig)
+check-aliases	detect conflicting or redefined aliases
 audit	scan the working tree for secrets (betterleaks)
 test	run the bats smoke tests in test/
 bench [N]	benchmark interactive zsh startup (N runs, default 10)
+profile [--sort]	detailed startup profiling by module with timing
 sync <host:path>	rsync repo from a remote machine (includes dotfiles; see: dotfiles help sync)
-profile	start a zsh that prints a zprof startup timing report
 doc [man]	regenerate the man page from this help
 help	show this help
 EOF
@@ -438,14 +441,17 @@ main() {
     stow)            cmd_stow "$@" ;;
     work-stow)       cmd_work_stow "$@" ;;
     doctor)          cmd_doctor "$@" ;;
+    doctor-tools)    "$DOTFILES_DIR/bin/dotfiles-tools" doctor ;;
+    validate)        "$DOTFILES_DIR/bin/dotfiles-validate" config ;;
     check)           cmd_check "$@" ;;
+    check-aliases)   [ -x "$DOTFILES_DIR/config/shell/lib/alias-check.sh" ] && bash "$DOTFILES_DIR/config/shell/lib/alias-check.sh" check-aliases ;;
     audit)           cmd_audit "$@" ;;
     test)            cmd_test "$@" ;;
     bench)           cmd_bench "$@" ;;
+    profile)         "$DOTFILES_DIR/bin/dotfiles-profile" "$@" ;;
     sync)            cmd_sync "$@" ;;
     update)          cmd_update "$@" ;;
     update-tools)    cmd_update_tools "$@" ;;
-    profile)         cmd_profile "$@" ;;
     doc)             cmd_doc "$@" ;;
     help|-h|--help)  usage ;;
     *)               die "unknown command '$sub' (try: dotfiles help)" ;;

@@ -1,15 +1,28 @@
 #!/usr/bin/env bash
 # install/bin/install-from-manifest.sh — install tools from config/tools.toml manifest
 # Supports sequential or parallel installation (if GNU parallel/xargs available).
-# Usage: install-from-manifest.sh [--parallel | --sequential]
+# Usage: install-from-manifest.sh [--parallel | --sequential] [--save-lock]
 #        PARALLEL_JOBS=N ./install-from-manifest.sh
 set -uo pipefail
 
 source "$(dirname "$0")/../common.sh"
 
 MANIFEST="${DOTFILES}/config/tools.toml"
+LOCK_FILE="${DOTFILES}/config/tools.lock"
 PARALLEL_JOBS="${PARALLEL_JOBS:-4}"  # default 4 concurrent installs
-INSTALL_MODE="${1:-auto}"  # auto, parallel, sequential
+INSTALL_MODE="auto"  # auto, parallel, sequential
+SAVE_LOCK=0
+
+# Parse options
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --parallel)   INSTALL_MODE="parallel"; shift ;;
+    --sequential) INSTALL_MODE="sequential"; shift ;;
+    --save-lock)  SAVE_LOCK=1; shift ;;
+    --auto)       INSTALL_MODE="auto"; shift ;;
+    *)            break ;;
+  esac
+done
 
 # --- TOML parsing (simple sed/awk-based, no external dependencies) -----------
 # parse_tool_entries TOML_FILE — extract tool install blocks
@@ -123,3 +136,30 @@ case "$INSTALL_MODE" in
 esac
 
 ok "Tool installation from manifest complete"
+
+# Update lock file if requested
+if [ $SAVE_LOCK -eq 1 ]; then
+  log "Updating lock file: $LOCK_FILE"
+  {
+    printf '[meta]\n'
+    printf 'generated_at = "%s"\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+    printf 'lock_version = "1.0"\n'
+    printf '\n'
+    
+    while IFS='|' read -r name repo archive pattern binname; do
+      [ -z "$name" ] && continue
+      
+      # Try to get version
+      local version=""
+      if command -v "$name" >/dev/null 2>&1; then
+        version=$($name --version 2>&1 | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)
+      fi
+      
+      printf '[tool.%s]\n' "$name"
+      printf 'version = "%s"\n' "${version:-unknown}"
+      printf 'installed_at = "%s"\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+      printf '\n'
+    done <<<"$entries"
+  } > "$LOCK_FILE"
+  ok "Lock file updated: $LOCK_FILE"
+fi

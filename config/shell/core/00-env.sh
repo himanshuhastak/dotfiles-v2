@@ -48,14 +48,30 @@ export DOTFILES_LOCAL="${DOTFILES_LOCAL:-$DOTFILES_DIR/local}"
 
 # Persisted module toggles (managed by `dotfiles disable|enable <name>`).
 # One module name per line; folded into $DOTFILES_DISABLE before _load_dir runs.
+# Cached for faster startup (regenerated when disabled file changes).
+_cached_disabled="${XDG_CACHE_HOME:-$HOME/.cache}/dotfiles/.disabled"
 if [ -r "$DOTFILES_LOCAL/disabled" ]; then
-  while IFS= read -r _m; do
-    case "$_m" in ''|\#*) continue ;; esac
-    DOTFILES_DISABLE="${DOTFILES_DISABLE:-} $_m"
-  done < "$DOTFILES_LOCAL/disabled"
-  export DOTFILES_DISABLE
-  unset _m
+  # Check if cache is fresh (disabled file unchanged)
+  if [ -r "$_cached_disabled" ] && [ "$DOTFILES_LOCAL/disabled" -ot "$_cached_disabled" ]; then
+    # Cache is fresh — use it
+    export DOTFILES_DISABLE="$(cat "$_cached_disabled")"
+  else
+    # Rebuild cache
+    mkdir -p "${_cached_disabled%/*}"
+    while IFS= read -r _m; do
+      case "$_m" in ''|\#*) continue ;; esac
+      DOTFILES_DISABLE="${DOTFILES_DISABLE:-} $_m"
+    done < "$DOTFILES_LOCAL/disabled"
+    export DOTFILES_DISABLE
+    
+    # Save cache for next shell
+    printf '%s' "$DOTFILES_DISABLE" > "$_cached_disabled"
+    unset _m
+  fi
+else
+  [ -f "$_cached_disabled" ] && rm -f "$_cached_disabled"
 fi
+unset _cached_disabled
 
 export EDITOR="${EDITOR:-vim}"
 export PAGER="${PAGER:-less}"
