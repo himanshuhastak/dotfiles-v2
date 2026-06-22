@@ -9,6 +9,23 @@
 # Source it by path (it is NOT stowed into $HOME):
 #   . "$DOTFILES_DIR/config/shell/shrc"
 
+if [ -z "${DOTFILES_DIR:-}" ]; then
+  if [ -r "${BASH_SOURCE[0]:-}" ]; then
+    _dfself="$(readlink -f "${BASH_SOURCE[0]}" 2>/dev/null || echo "${BASH_SOURCE[0]}")"
+    _dfroot="$(cd "$(dirname "$_dfself")/../.." && pwd)"
+    # shrc lives at config/shell/shrc — two levels below repo root.
+    . "$_dfroot/config/shell/resolve-dotfiles-dir.sh"
+    unset _dfself _dfroot
+  else
+    . "${HOME}/.zshenv" 2>/dev/null || true
+    if [ -z "${DOTFILES_DIR:-}" ] && [ -e "$HOME/.zshenv" ]; then
+      _dfself="$(readlink -f "$HOME/.zshenv" 2>/dev/null || echo "$HOME/.zshenv")"
+      _dfroot="$(cd "$(dirname "$_dfself")/../../.." && pwd)"
+      . "$_dfroot/config/shell/resolve-dotfiles-dir.sh" "$_dfself"
+      unset _dfself _dfroot
+    fi
+  fi
+fi
 : "${DOTFILES_DIR:=$HOME/dotfiles_v2}"
 _sh="$DOTFILES_DIR/config/shell"
 [ -r "$_sh/loader.sh" ]            && . "$_sh/loader.sh"

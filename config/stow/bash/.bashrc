@@ -9,20 +9,32 @@
 # bare environment (cron/systemd) can `. "$DOTFILES_DIR/config/shell/core/00-env.sh"`.
 case $- in *i*) ;; *) return ;; esac
 
+# Locate the repo from this stowed file (works at any clone path).
+_dfself="$(readlink -f "${BASH_SOURCE[0]}" 2>/dev/null || echo "${BASH_SOURCE[0]}")"
+_dfroot="$(cd "$(dirname "$_dfself")/../../.." && pwd)"
+. "$_dfroot/config/shell/resolve-dotfiles-dir.sh" "$_dfself"
+
+# Prefer self-installed zsh; fall back to system zsh.
+_zsh="$DOTFILES_DIR/var/tools/bin/zsh"
+[ -x "$_zsh" ] || _zsh="$(command -v zsh 2>/dev/null || true)"
+[ -x "$_zsh" ] || _zsh=/usr/bin/zsh
+if [ ! -x "$_zsh" ]; then
+  printf '%s\n' 'dotfiles: zsh not found (install tools: ./install.sh)' >&2
+  unset _dfself _dfroot _zsh
+  return 1
+fi
+
 # Fresh zsh login: drop bash/inherited env; ~/.zshenv bootstrap rebuilds everything.
-# _df="${DOTFILES_DIR:-$HOME/dotfiles_v2}"
-# _zsh="$_df/var/tools/bin/zsh"
-# [ -x "$_zsh" ] || _zsh="$(command -v zsh 2>/dev/null || echo /usr/bin/zsh)"
-# _user="${USER:-$(id -un)}"
-# 
-# _env=( -i
-#   "HOME=$HOME"
-#   "USER=$_user"
-#   "LOGNAME=${LOGNAME:-$_user}"
-#   "TERM=${TERM:-xterm-256color}"
-#   "SHELL=$_zsh"
-# )
-# [[ -n "${LANG:-}" ]] && _env+=( "LANG=$LANG" )
-# [[ -n "${LC_ALL:-}" ]] && _env+=( "LC_ALL=$LC_ALL" )
-# exec env "${_env[@]}" "$_zsh" -l
-exec $HOME/dotfiles-v2/var/tools/bin/zsh
+_user="${USER:-$(id -un)}"
+_env=( -i
+  "HOME=$HOME"
+  "USER=$_user"
+  "LOGNAME=${LOGNAME:-$_user}"
+  "TERM=${TERM:-xterm-256color}"
+  "SHELL=$_zsh"
+)
+[[ -n "${LANG:-}" ]]   && _env+=( "LANG=$LANG" )
+[[ -n "${LC_ALL:-}" ]] && _env+=( "LC_ALL=$LC_ALL" )
+
+unset _dfself _dfroot _user
+exec env "${_env[@]}" "$_zsh" -l
