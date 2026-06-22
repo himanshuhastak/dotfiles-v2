@@ -385,12 +385,6 @@ cmd_sync() {
     "$src" "$DOTFILES_DIR/"
 }
 
-cmd_profile() {
-  command -v zsh >/dev/null 2>&1 || die "profile: zsh not found"
-  echo "Starting a profiled interactive zsh (exit it to return)..."
-  DOTFILES_PROFILE=1 zsh -i -l
-}
-
 # --- man page generation (from _commands, so it never drifts) ----------------
 _gen_man() {
   local out="$DOTFILES_DIR/man/dotfiles.1" date

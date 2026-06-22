@@ -8,10 +8,7 @@ alias zj='zellij'
 # existing multiplexer. Only runs when: inside SSH, zellij is not already
 # running, and the terminal supports it (not a dumb terminal).
 if [ -n "${SSH_CONNECTION:-}" ] && [ -z "${ZELLIJ:-}" ] && [ "${TERM:-}" != dumb ]; then
-  # Attach to existing session if one exists; otherwise start fresh.
-  if zellij list-sessions 2>/dev/null | grep -q .; then
-    exec zellij attach
-  else
-    exec zellij
-  fi
+  # Attach to the most-recently-used session, or start a new one.
+  # `-c` = create session if none exists; no session name = pick newest.
+  exec zellij attach --create 2>/dev/null || exec zellij
 fi

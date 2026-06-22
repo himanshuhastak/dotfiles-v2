@@ -45,6 +45,8 @@ parse_tool_entries() {
   local toml=$1
   [ -r "$toml" ] || return 1
   
+  # Use gsub() instead of match() 3-arg form: portable across BSD awk (macOS)
+  # and GNU awk. gsub strips everything before/after the quoted value.
   awk '
     /^\[\[tool\]\]/ {
       if (name != "") print name "|" repo "|" archive_pattern "|" binname
@@ -52,20 +54,16 @@ parse_tool_entries() {
       next
     }
     /^name[[:space:]]*=/ {
-      match($0, /"([^"]+)"/, a)
-      name = a[1]
+      v = $0; gsub(/^[^"]*"/, "", v); gsub(/".*/, "", v); name = v
     }
     /^repo[[:space:]]*=/ {
-      match($0, /"([^"]+)"/, a)
-      repo = a[1]
+      v = $0; gsub(/^[^"]*"/, "", v); gsub(/".*/, "", v); repo = v
     }
     /^archive_pattern[[:space:]]*=/ {
-      match($0, /"([^"]+)"/, a)
-      archive_pattern = a[1]
+      v = $0; gsub(/^[^"]*"/, "", v); gsub(/".*/, "", v); archive_pattern = v
     }
     /^binname[[:space:]]*=/ {
-      match($0, /"([^"]+)"/, a)
-      binname = a[1]
+      v = $0; gsub(/^[^"]*"/, "", v); gsub(/".*/, "", v); binname = v
     }
     END {
       if (name != "") print name "|" repo "|" archive_pattern "|" binname

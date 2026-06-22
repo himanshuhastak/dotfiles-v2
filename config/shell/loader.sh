@@ -25,6 +25,8 @@ _load_file() {
   # zsh transparently loads "$f.zwc" (bytecode) instead of "$f" when it exists
   # and is newer — build it with `dotfiles compile`. bash just sources "$f".
   . "$f"
+  # Wire session-state tracking (zsh only; _track_module is a no-op in bash).
+  [ -n "${ZSH_VERSION:-}" ] && (( ${+functions[_track_module]} )) && _track_module "$base"
 }
 
 # _load_dir DIR [EXT]

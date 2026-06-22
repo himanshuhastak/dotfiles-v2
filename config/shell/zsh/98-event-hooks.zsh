@@ -16,14 +16,12 @@ add-dotfiles-hook() {
 
 # _trigger_hook EVENT — execute all registered callbacks for event
 _trigger_hook() {
-  local event=$1
-  
-  for key callback_name in "${(@kv)DOTFILES_EVENT_HOOKS}"; do
-    local event_name="${key%:*}"
-    [ "$event_name" = "$event" ] || continue
-    
-    # Execute callback if function exists
-    (( ${+functions[$callback_name]} )) && $callback_name
+  local event=$1 key
+  # Iterate keys only; value (callback name) == everything after the first ':'
+  for key in "${(@k)DOTFILES_EVENT_HOOKS}"; do
+    [[ "${key%%:*}" == "$event" ]] || continue
+    local cb="${key#*:}"
+    (( ${+functions[$cb]} )) && $cb
   done
 }
 

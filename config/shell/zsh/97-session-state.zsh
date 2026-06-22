@@ -7,15 +7,16 @@ declare -gA DOTFILES_TOOLS      # Tool -> initialized|failed
 declare -gA DOTFILES_HOOKS      # Hook -> callback_function
 
 # _session_state_init — initialize session tracking
+# Uses $EPOCHSECONDS from zsh/datetime (loaded in 02-zmodload.zsh) — no fork.
 _session_state_init() {
-  DOTFILES_LOADED[_started]="$(date +%s%N)"
+  DOTFILES_LOADED[_started]=$EPOCHSECONDS
 }
 
 # _track_module NAME — mark module as loaded
+# Called by _load_file; uses $EPOCHSECONDS (integer seconds, no subshell fork).
 _track_module() {
-  local name=$1 now
-  now=$(date +%s%N)
-  DOTFILES_LOADED[$name]=$((now / 1000000))  # Convert to ms
+  local name=$1
+  DOTFILES_LOADED[$name]=$EPOCHSECONDS
 }
 
 # _track_tool NAME STATUS — mark tool as initialized
