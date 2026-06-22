@@ -1,0 +1,19 @@
+# sheldon plugins — https://sheldon.cli.rs  (managed via dotfiles/stow/sheldon)
+# Reload after edits:  sheldon lock --update
+shell = "zsh"
+
+[plugins.zsh-completions]
+github = "zsh-users/zsh-completions"
+
+[plugins.fzf-tab]
+github = "Aloxaf/fzf-tab"
+
+[plugins.zsh-autosuggestions]
+github = "zsh-users/zsh-autosuggestions"
+
+[plugins.zsh-history-substring-search]
+github = "zsh-users/zsh-history-substring-search"
+
+# Syntax highlighting must be loaded LAST.
+[plugins.zsh-syntax-highlighting]
+github = "zsh-users/zsh-syntax-highlighting"

@@ -1,0 +1,6 @@
+#autoload
+# up [N] — cd up N parent directories (default 1).  e.g. `up 3` == cd ../../..
+emulate -L zsh
+local n=${1:-1} dir=
+while (( n-- > 0 )); do dir="../$dir"; done
+builtin cd -- "${dir:-.}"

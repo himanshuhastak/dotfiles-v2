@@ -1,0 +1,2 @@
+# Drop extra zsh completion functions here as _<command> files.
+# This dir is prepended to $fpath before compinit (see ../zsh/20-completion.zsh).

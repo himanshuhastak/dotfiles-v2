@@ -1,0 +1,8 @@
+# company.sh — work / cluster env (interactive last). Keep SILENT (no echo).
+# Copy to profile/company.sh (gitignored).
+#
+# export WORK_ROOT="$HOME/work"
+# _path_prepend "/opt/company/bin"; export PATH
+#
+# work-ssh() { ssh login.company.internal "$@"; }
+# alias k='kubectl -n company-dev'

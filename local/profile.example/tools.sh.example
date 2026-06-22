@@ -1,0 +1,4 @@
+# tools.sh — per-tool hooks (after compinit). Copy to profile/tools.sh (gitignored).
+#
+# command -v mytool >/dev/null 2>&1 || return 0
+# _defer 'eval "$(mytool init zsh)"'
