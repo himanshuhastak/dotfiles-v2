@@ -1,0 +1,360 @@
+# config/tools.toml — Unified tool installer manifest and metadata
+# Each [[tool]] section defines one installable tool with its GitHub repo,
+# archive pattern, and shell integration details.
+
+# Tools with shell init (fzf, atuin, zoxide, direnv, broot, starship)
+[[tool]]
+name = "fzf"
+repo = "junegunn/fzf"
+archive_pattern = "fzf-{ver}-linux_{goarch}.tar.gz"
+description = "Fuzzy finder for CLI"
+category = "productivity"
+init_shell = "both"
+defer = true
+custom_env = true
+
+[[tool]]
+name = "atuin"
+repo = "atuinsh/atuin"
+archive_pattern = "atuin-{arch}-unknown-linux-musl.tar.gz"
+description = "Improved shell history with sync"
+category = "shell-enhancement"
+init_shell = "both"
+defer = true
+init_flags = "--disable-up-arrow"
+
+[[tool]]
+name = "zoxide"
+repo = "ajeetdsouza/zoxide"
+archive_pattern = "zoxide-{ver}-{arch}-unknown-linux-musl.tar.gz"
+description = "Frecency-based directory jumper"
+category = "productivity"
+init_shell = "both"
+defer = true
+
+[[tool]]
+name = "direnv"
+repo = "direnv/direnv"
+archive_pattern = "direnv.linux-{goarch}"
+binname = "direnv"
+description = "Per-directory environment (.envrc)"
+category = "shell-enhancement"
+init_shell = "both"
+defer = true
+
+[[tool]]
+name = "broot"
+repo = "Canop/broot"
+archive_pattern = "broot-{arch}-unknown-linux-musl.zip"
+binname = "broot"
+description = "Tree navigator and launcher"
+category = "navigation"
+init_shell = "both"
+defer = true
+fallback_script = "${XDG_CONFIG_HOME:-$HOME/.config}/broot/launcher/bash/br"
+
+[[tool]]
+name = "starship"
+repo = "starship/starship"
+archive_pattern = "starship-{arch}-unknown-linux-musl.tar.gz"
+description = "Cross-shell prompt"
+category = "ui"
+init_shell = "both"
+defer = false
+
+# Utility tool aliases (no special init)
+[[tool]]
+name = "bat"
+repo = "sharkdp/bat"
+archive_pattern = "bat-{tag}-{arch}-unknown-linux-musl.tar.gz"
+binname = "bat"
+description = "Cat clone with syntax highlighting"
+category = "utilities"
+aliases = [["cat", "bat --paging=never"], ["less", "bat"]]
+
+[[tool]]
+name = "choose"
+repo = "theryangeary/choose"
+archive_pattern = "choose-{ver}-{arch}-unknown-linux-musl.tar.gz"
+description = "Column/field picker for piped text"
+category = "utilities"
+aliases = [["cut", "choose"]]
+
+[[tool]]
+name = "delta"
+repo = "dandavison/delta"
+archive_pattern = "delta-{ver}-{arch}-unknown-linux-musl.tar.gz"
+description = "Syntax-highlighting pager for git diffs"
+category = "git"
+env_vars = [["GIT_PAGER", "delta"]]
+
+[[tool]]
+name = "duf"
+repo = "muesli/duf"
+archive_pattern = "duf_{ver}_linux_{goarch}.tar.gz"
+description = "Modern df replacement"
+category = "utilities"
+aliases = [["df", "duf"]]
+
+[[tool]]
+name = "dust"
+repo = "boopm/dust"
+archive_pattern = "dust-{arch}-unknown-linux-musl.tar.gz"
+description = "Modern du (largest entries first)"
+category = "utilities"
+aliases = [["du", "dust -r"]]
+
+[[tool]]
+name = "eza"
+repo = "eza-community/eza"
+archive_pattern = "eza_linux_{arch}.tar.gz"
+description = "Modern ls replacement"
+category = "utilities"
+aliases = [["ls", "eza --group-directories-first --icons=auto"], ["ll", "eza -lah --git --group-directories-first --icons=auto"], ["lt", "eza --tree --level=2 --icons=auto"], ["tree", "eza --tree --icons=auto"]]
+
+[[tool]]
+name = "fd"
+repo = "sharkdp/fd"
+archive_pattern = "fd-{ver}-{arch}-unknown-linux-musl.tar.gz"
+binname = "fd"
+description = "Friendlier find"
+category = "utilities"
+aliases = [["find", "fd"], ["fdh", "fd --hidden --no-ignore"]]
+
+[[tool]]
+name = "gdu"
+repo = "dundee/gdu"
+archive_pattern = "gdu_linux_{arch}_single.tar.gz"
+description = "NCDu-style disk usage"
+category = "utilities"
+aliases = [["ncdu", "gdu"]]
+
+[[tool]]
+name = "just"
+repo = "casey/just"
+archive_pattern = "just-{ver}-{arch}-unknown-linux-musl.tar.gz"
+binname = "just"
+description = "Command runner (like make)"
+category = "productivity"
+aliases = [["j", "just"]]
+
+[[tool]]
+name = "lazygit"
+repo = "jesseduffield/lazygit"
+archive_pattern = "lazygit_{ver}_Linux_{arch}.tar.gz"
+description = "Terminal UI for git"
+category = "git"
+aliases = [["lg", "lazygit"]]
+
+[[tool]]
+name = "oc-rsync"
+repo = "opensourcecherishers/rsync"
+archive_pattern = "oc-rsync-{arch}-unknown-linux-musl.tar.gz"
+binname = "oc-rsync"
+description = "Rust rsync (wire-compatible with rsync 3.4.1)"
+category = "utilities"
+aliases = [["rsync", "oc-rsync"]]
+optional = true
+
+[[tool]]
+name = "procs"
+repo = "dalance/procs"
+archive_pattern = "procs-{ver}-{arch}-unknown-linux-musl.tar.gz"
+binname = "procs"
+description = "Modern ps replacement"
+category = "utilities"
+aliases = [["ps", "procs"]]
+
+[[tool]]
+name = "rg"
+repo = "BurntSushi/ripgrep"
+archive_pattern = "ripgrep-{ver}-{arch}-unknown-linux-musl.tar.gz"
+binname = "rg"
+description = "Faster grep (ripgrep)"
+category = "utilities"
+aliases = [["grep", "rg --smart-case"], ["rgi", "rg -i"]]
+
+[[tool]]
+name = "sd"
+repo = "chmln/sd"
+archive_pattern = "sd-{arch}-unknown-linux-musl"
+binname = "sd"
+description = "Modern sed"
+category = "utilities"
+
+[[tool]]
+name = "task"
+repo = "GothenburgBitFactory/taskwarrior"
+description = "Task manager CLI"
+category = "productivity"
+install_method = "source"
+optional = true
+aliases = [["t", "task"]]
+
+[[tool]]
+name = "taskwarrior-tui"
+repo = "TsReaper/taskwarrior-tui"
+archive_pattern = "taskwarrior-tui-{arch}-unknown-linux-musl.tar.gz"
+description = "Task manager TUI"
+category = "productivity"
+aliases = [["tt", "taskwarrior-tui"]]
+optional = true
+
+[[tool]]
+name = "timew"
+repo = "GothenburgBitFactory/timewarrior"
+description = "Time tracking CLI"
+category = "productivity"
+install_method = "source"
+optional = true
+aliases = [["tw", "timew"]]
+
+[[tool]]
+name = "tldr"
+repo = "tldr-pages/tldr-python-client"
+archive_pattern = "tldr-{ver}.linux.{arch}.tar.gz"
+binname = "tldr"
+description = "Simplified man pages"
+category = "utilities"
+aliases = [["help", "tldr"]]
+
+[[tool]]
+name = "zellij"
+repo = "zellij-org/zellij"
+archive_pattern = "zellij-{arch}-unknown-linux-musl.tar.gz"
+description = "Terminal multiplexer"
+category = "shells"
+aliases = [["tmux", "zellij"], ["zj", "zellij"]]
+
+# Supporting tools (no UI, backend)
+[[tool]]
+name = "jq"
+repo = "jqlang/jq"
+archive_pattern = "jq-linux-{arch}"
+binname = "jq"
+description = "JSON query tool"
+category = "utilities"
+
+[[tool]]
+name = "yq"
+repo = "mikefarah/yq"
+archive_pattern = "yq_linux_{arch}.tar.gz"
+binname = "yq"
+description = "YAML query tool (like jq)"
+category = "utilities"
+
+[[tool]]
+name = "shellcheck"
+repo = "koalaman/shellcheck"
+archive_pattern = "shellcheck-{ver}.linux.{arch}.tar.xz"
+binname = "shellcheck"
+description = "Shell script linter"
+category = "development"
+
+[[tool]]
+name = "shfmt"
+repo = "mvdan/sh"
+archive_pattern = "shfmt-{ver}-linux-{arch}"
+binname = "shfmt"
+description = "Shell script formatter"
+category = "development"
+
+[[tool]]
+name = "actionlint"
+repo = "rhysd/actionlint"
+archive_pattern = "actionlint-{ver}-linux-{arch}.tar.gz"
+binname = "actionlint"
+description = "GitHub Actions linter"
+category = "development"
+
+[[tool]]
+name = "betterleaks"
+repo = "savioxavier/betterleaks"
+archive_pattern = "betterleaks-{arch}-unknown-linux-musl.tar.gz"
+description = "Secret scanning tool"
+category = "development"
+
+[[tool]]
+name = "editorconfig-checker"
+repo = "editorconfig-checker/editorconfig-checker"
+archive_pattern = "ec-linux-{arch}.tar.gz"
+binname = "ec"
+description = "EditorConfig linter"
+category = "development"
+
+[[tool]]
+name = "bats"
+repo = "bats-core/bats-core"
+archive_pattern = "bats-{ver}.tar.gz"
+binname = "bats"
+description = "Bash Automated Testing System"
+category = "development"
+
+[[tool]]
+name = "zshellcheck"
+repo = "shellcheck-py/shellcheck-py"
+archive_pattern = "zshellcheck-{ver}-{arch}-unknown-linux-musl.tar.gz"
+binname = "zshellcheck"
+description = "Zsh linter"
+category = "development"
+
+[[tool]]
+name = "parallel"
+repo = "ole-tange/parallel"
+archive_pattern = "parallel-{ver}.tar.bz2"
+binname = "parallel"
+description = "GNU parallel for batch processing"
+category = "utilities"
+optional = true
+
+[[tool]]
+name = "miniserve"
+repo = "svenstaro/miniserve"
+archive_pattern = "miniserve-{arch}-unknown-linux-musl"
+binname = "miniserve"
+description = "Tiny HTTP server"
+category = "utilities"
+optional = true
+
+[[tool]]
+name = "pipr"
+repo = "nickstenning/pipr"
+archive_pattern = "pipr_{ver}_linux_{arch}.tar.gz"
+binname = "pipr"
+description = "Interactive Python REPL"
+category = "development"
+optional = true
+
+# Language toolchains (often require special handling)
+[[tool]]
+name = "rust"
+repo = "rust-lang/rust"
+description = "Rust toolchain"
+category = "languages"
+install_method = "script"
+optional = true
+script_url = "https://sh.rustup.rs"
+
+[[tool]]
+name = "blesh"
+repo = "akinomyoga/ble.sh"
+description = "Bash line editing library"
+category = "shell-enhancement"
+install_method = "git-clone"
+optional = true
+
+[[tool]]
+name = "bugwarrior"
+repo = "GothenburgBitFactory/bugwarrior"
+description = "Task sync from bug trackers"
+category = "productivity"
+install_method = "pip"
+optional = true
+
+[[tool]]
+name = "zsh"
+repo = "zsh-users/zsh"
+description = "Zsh shell"
+category = "shells"
+install_method = "source"
+optional = true

@@ -1,4 +1,4 @@
-# fd — friendlier find.
+# fd — friendlier find replacement.
 command -v fd >/dev/null 2>&1 || return 0
 alias find='fd'
 alias fdh='fd --hidden --no-ignore'

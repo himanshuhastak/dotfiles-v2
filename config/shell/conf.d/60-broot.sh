@@ -2,6 +2,7 @@
 # can cd into the directory picked in broot.
 command -v broot >/dev/null 2>&1 || return 0
 
+# Initialize shell function (deferred in zsh, sync in bash)
 if [ -n "${ZSH_VERSION:-}" ]; then
   _defer '_eval_cached broot "broot --print-shell-function zsh"'
 elif [ -n "${BASH_VERSION:-}" ]; then

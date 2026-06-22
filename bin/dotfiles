@@ -32,6 +32,7 @@ enable <name>...	re-enable module(s) (persists)
 disable <name>...	disable module(s) (persists)
 reload	recompile, then re-exec the current shell
 update	git pull --ff-only, then re-run install.sh
+update-tools [--all | TOOL...]	update tools from manifest or re-install specific tools
 compile	byte-compile the zsh framework (.zwc) for faster startup
 stow [--if-needed]	(re)create the dotfiles symlinks via stow
 work-stow [--if-needed]	stow ~/Work links (from ~/bin/gfs/mount.lst)
@@ -443,6 +444,7 @@ main() {
     bench)           cmd_bench "$@" ;;
     sync)            cmd_sync "$@" ;;
     update)          cmd_update "$@" ;;
+    update-tools)    cmd_update_tools "$@" ;;
     profile)         cmd_profile "$@" ;;
     doc)             cmd_doc "$@" ;;
     help|-h|--help)  usage ;;
@@ -456,6 +458,21 @@ cmd_update() {
   git -C "$DOTFILES_DIR" pull --ff-only || die "update: pull failed (resolve manually)"
   echo "==> ./install.sh"
   "$DOTFILES_DIR/install.sh" "$@"
+}
+
+cmd_update_tools() {
+  local install_script="$DOTFILES_DIR/install/bin/install-from-manifest.sh"
+  [ -x "$install_script" ] || die "update-tools: manifest installer not found ($install_script)"
+  
+  if [ "$#" -eq 0 ] || ([ "$#" -eq 1 ] && [ "$1" = "--all" ]); then
+    # Update all tools
+    bash "$install_script"
+  else
+    # Update specific tools (fall back to legacy per-tool scripts)
+    local install_tools="$DOTFILES_DIR/install/steps/install-tools.sh"
+    [ -x "$install_tools" ] || die "update-tools: installer not found ($install_tools)"
+    bash "$install_tools" "$@"
+  fi
 }
 
 main "$@"

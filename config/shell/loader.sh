@@ -83,3 +83,54 @@ _eval_cached() {
 # that relies on a global `setopt`/keymap side effect (zsh-defer runs in function
 # scope with LOCAL_OPTIONS, which would revert those).
 _defer() { eval "$1"; }
+
+# _init_tool_hook TOOLNAME [--defer] [--flags...]
+# Initialize a tool that exports shell functions/aliases via `tool init <shell>`.
+# Handles zsh/bash branching and caching transparently. Skips if tool not installed.
+# Usage examples:
+#   _init_tool_hook fzf --defer
+#   _init_tool_hook atuin --defer --disable-up-arrow
+#   _init_tool_hook starship    (no defer — prompt needs sync init)
+_init_tool_hook() {
+  local tool=$1 defer=0 flags=()
+  shift 2>/dev/null || return 1
+  
+  # Extract --defer flag
+  while [ $# -gt 0 ]; do
+    case "$1" in
+      --defer) defer=1; shift ;;
+      *) flags+=("$1"); shift ;;
+    esac
+  done
+  
+  # Skip if tool not found
+  if ! command -v "$tool" >/dev/null 2>&1; then
+    return 0
+  fi
+  
+  # Build the init command
+  local init_cmd="$tool init"
+  if [ -n "${ZSH_VERSION:-}" ]; then
+    init_cmd="$init_cmd zsh"
+  elif [ -n "${BASH_VERSION:-}" ]; then
+    init_cmd="$init_cmd bash"
+  else
+    return 0
+  fi
+  
+  # Append any flags
+  if [ ${#flags[@]} -gt 0 ]; then
+    init_cmd="$init_cmd ${flags[*]}"
+  fi
+  
+  # Execute via _defer or _eval_cached
+  if [ -n "${ZSH_VERSION:-}" ]; then
+    if [ $defer -eq 1 ]; then
+      _defer "_eval_cached '$tool' '$init_cmd'"
+    else
+      _eval_cached "$tool" "$init_cmd"
+    fi
+  elif [ -n "${BASH_VERSION:-}" ]; then
+    eval "$($init_cmd)" 2>/dev/null
+  fi
+}
