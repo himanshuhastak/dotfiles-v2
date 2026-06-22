@@ -20,3 +20,12 @@
 *.swp
 *~
 .DS_Store
+
+# Per-user local overrides — only templates are tracked (see local/README.example).
+# Real profile/*.sh and local/disabled are never committed.
+local/**
+!local/*.example
+!local/profile.example/
+!local/profile.example/**
+!local/profile/
+!local/profile/.gitignore

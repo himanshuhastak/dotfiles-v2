@@ -1,6 +1,6 @@
 # Naming & conventions
 
-## Module files
+## Module files (framework)
 
 - **`NN-name.ext`** — a leading two-digit prefix controls load order within a
   directory (`_load_dir` sorts lexically). Unprefixed files are order-independent.
@@ -33,45 +33,49 @@
 - `dotfiles disable <name>` appends `name` to `$DOTFILES_LOCAL/disabled`.
 - `00-env.sh` folds that file into `$DOTFILES_DISABLE`; `_load_file` skips matching
   modules. `dotfiles enable <name>` removes it. Re-`reload` to apply.
+- For profile files, `<name>` is the basename without `.sh` (e.g. `company`).
 
-## Local overrides (`$DOTFILES_DIR/local/`)
+## Local profile (`$DOTFILES_DIR/local/profile/`)
 
-`$DOTFILES_LOCAL` defaults to `$DOTFILES_DIR/local`. Only `*.example` templates are
-tracked; copy a template to `NN-name.sh` (e.g. `00-09-secrets.example` →
-`00-secrets.sh`) — your copies are gitignored.
+`$DOTFILES_LOCAL` defaults to `$DOTFILES_DIR/local`. Per-user config lives in
+`$DOTFILES_LOCAL/profile/*.sh`. Only `profile.example/` templates are tracked in
+git — copy them to `profile/` and drop the `.example` suffix.
 
-**Pattern:** `NN-name.sh` — e.g. `00-secrets.sh`, `40-company.sh`, `41-client.sh`.
-The number sets when the file loads; the name is yours (and the id for
-`dotfiles disable <name>`).
+**Stable semantic files** (fixed names; load timing is hardcoded in the entrypoints):
 
-| Range | Template | Real file example |
+| File | Loaded from | Use for |
 |---|---|---|
-| `00–09` | `00-09-secrets.example` | `00-secrets.sh` |
-| `10–19` | `10-19-login.example` | `10-login.sh` |
-| `20–29` | `20-29-aliases.example` | `20-personal.sh` |
-| `30–39` | `30-39-tools.example` | `30-mytool.sh` |
-| `40–99` | `40-99-company.example` | `40-company.sh` |
+| `secrets.sh` | `.zshenv` / `00-env.sh` | every shell — secrets, PATH, exports |
+| `login.sh` | `.zprofile` | login zsh only |
+| `aliases.sh` | `.zshrc` (early) | interactive aliases |
+| `tools.sh` | `.zshrc` (after compinit) | per-tool hooks |
+| `company.sh` | `.zshrc` (last) | work / cluster env |
 
-| Range | When loaded | Use for |
-|---|---|---|
-| `00–09` | every shell | secrets, PATH, exports (scripts too) |
-| `10–19` | login zsh | login-only setup |
-| `20–29` | interactive | aliases |
-| `30–39` | interactive (after compinit) | per-tool hooks |
-| `40–99` | interactive (last) | company / personal profile |
-
-`local/disabled` — module toggles (`dotfiles disable`); not numbered.
+`local/disabled` — module toggles (`dotfiles disable`); not a profile file.
 
 Quick start:
 
 ```sh
-cp local/00-09-secrets.example local/00-secrets.sh
-cp local/40-99-company.example local/40-company.sh
+mkdir -p local/profile
+cp local/profile.example/*.example local/profile/
+for f in local/profile/*.example; do mv "$f" "${f%.example}"; done
 exec zsh
 ```
 
-Multiple employers: add `40-company.sh`, `41-client.sh` — all in `40–99` load in order.
-Skip one on a machine with `dotfiles disable company`.
+Skip one file on a machine: `dotfiles disable company`.
+
+### `company.sh` outside the repo (recommended for cluster env)
+
+Keep the real file on disk outside the git tree and symlink into `profile/`:
+
+```sh
+vim ~/bin/gfs.sh
+ln -sf ~/bin/gfs.sh local/profile/company.sh
+```
+
+`dotfiles sync` excludes `local/profile/*.sh`, so the symlink and its target
+(`~/bin/gfs.sh`) survive remote pulls. `install/cleanup.sh` removes
+`local/profile/` but not `~/bin/`.
 
 ## Host-specific tweaks (outside the repo)
 

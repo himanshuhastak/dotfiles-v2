@@ -4,26 +4,24 @@
 
 ```
 dotfiles_v2/
-  local/                      flat NN-name.sh per-user overrides (*.example tracked)
+  local/                      profile/*.sh per-user overrides (profile.example/ tracked)
   install.sh                  thin wrapper -> install/bootstrap.sh
   bin/dotfiles                management CLI (on PATH via $DOTFILES_DIR/bin)
   Makefile                    convenience targets (wrap the CLI)
   config/
-    home/                     not a stow pkg; reserved for $HOME-targeted files
     zsh/                      $ZDOTDIR: .zshenv, .zprofile, .zshrc — in-repo zsh config
     stow/                     GNU-stow packages -> symlinked into $HOME
       home/.zshenv            the ONLY zsh file in $HOME (ZDOTDIR bootstrap)
       bash/ git/ atuin/ sheldon/ starship/ task/ bat/ lazygit/
       zellij/                 config.kdl + layouts/ + plugins/ (symlinks → var/vendor)
     shell/                    the framework engine (sourced, never stowed)
-      loader.sh               _load_dir/_load_file/_eval_cached/_defer
+      loader.sh               _load_dir/_load_file/_load_profile/_eval_cached/_defer
       shrc                    portable base for an interactive bash fallback
       core/                   00-env 10-functions 20-aliases (bash + zsh)
       zsh/                    zsh-only modules, numbered by load order
       conf.d/                 per-tool drop-ins (fzf, atuin, zoxide, starship, …)
       completions/            extra _foo completion functions (on fpath)
       functions/              autoloaded zsh functions (one per file)
-      profiles/               example drop-in for local/40-company.sh
   install/                    the installer
     bootstrap.sh common.sh cleanup.sh
     bin/ (stow)  steps/  tools/
@@ -46,14 +44,14 @@ per-file zsh symlinks.
 
 ## Startup / load order
 
-`.zshenv` (every zsh): `loader.sh` → `core/00-env.sh` → `local/00–09*.sh`.
+`.zshenv` (every zsh): `loader.sh` → `core/00-env.sh` → `profile/secrets.sh`.
 
-`.zprofile` (login only): `dotfiles stow --if-needed` → `local/10–19*.sh` →
+`.zprofile` (login only): `dotfiles stow --if-needed` → `profile/login.sh` →
 `~/.zprofile.$USER`.
 
 `.zshrc` (interactive): `core/10-functions.sh` → `core/20-aliases.sh` →
-`local/20–29*.sh` → `config/shell/zsh/*` → `conf.d/*` → `local/30–39*.sh` →
-`local/40–99*.sh`.
+`profile/aliases.sh` → `config/shell/zsh/*` → `conf.d/*` → `profile/tools.sh` →
+`profile/company.sh`.
 
 zsh modules load in this order:
 
@@ -96,3 +94,21 @@ Everything under `var/` is generated/downloaded and gitignored:
 Durable shell state (zcompdump, init caches, history) lives under XDG
 (`~/.cache`, `~/.local/state`), **not** in `var/`. To reinstall cleanly:
 `rm -rf var && ./install.sh`.
+
+## Local profile (`local/profile/`)
+
+Per-user config uses **stable semantic filenames**, not numbered phases. Only
+`local/profile.example/` templates and `local/profile/.gitignore` are tracked;
+real `profile/*.sh` files are gitignored.
+
+| File | When loaded | Typical contents |
+|---|---|---|
+| `secrets.sh` | every zsh (via `.zshenv`) | API tokens, extra PATH |
+| `login.sh` | login zsh (`.zprofile`) | cluster login exports |
+| `aliases.sh` | interactive zsh (early `.zshrc`) | personal aliases |
+| `tools.sh` | interactive zsh (after compinit) | `_defer` tool inits |
+| `company.sh` | interactive zsh (last) | work / LSF / cluster env |
+
+`company.sh` is often a symlink to a file outside the repo (e.g. `~/bin/gfs.sh`)
+so `dotfiles sync` never overwrites machine-specific cluster setup. Toggle any
+file with `dotfiles disable <name>` (basename without `.sh`).

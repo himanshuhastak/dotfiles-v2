@@ -1,18 +1,27 @@
-# local/ — flat per-user drop-ins (only *.example templates are tracked).
+# local/ — per-user overrides (only profile.example/ templates are tracked).
 #
-# Real files:  NN-name.sh     e.g. 00-secrets.sh, 40-company.sh
-# Templates:    LO-HI-name.example   (range in the filename = when it loads)
+# Layout:
+#   profile/<name>.sh         real config (gitignored; may be symlinks)
+#   profile.example/*.example templates to copy from
+#   disabled                  module toggles (dotfiles disable; gitignored)
 #
-# Ranges:
-#   00–09  every shell (env, secrets)          00-09-secrets.example
-#   10–19  login zsh only                      10-19-login.example
-#   20–29  interactive aliases                 20-29-aliases.example
-#   30–39  per-tool hooks (after compinit)     30-39-tools.example
-#   40–99  company / personal (last)           40-99-company.example
+# Stable semantic files (load order is fixed by the framework):
+#   secrets.sh   every shell (env, secrets, PATH)
+#   login.sh     login zsh only
+#   aliases.sh   interactive aliases
+#   tools.sh     per-tool hooks (after compinit)
+#   company.sh   work / cluster env (interactive last)
 #
 # Quick start:
-#   cp local/00-09-secrets.example  local/00-secrets.sh
-#   cp local/40-99-company.example  local/40-company.sh
+#   mkdir -p local/profile
+#   cp local/profile.example/*.example local/profile/
+#   for f in local/profile/*.example; do mv "$f" "${f%.example}"; done
 #   exec zsh
 #
-# Real *.sh files are gitignored. Keep drop-ins SILENT (no echo).
+# company.sh (cluster / LSF): keep the real file outside the repo so rsync
+# never overwrites it, then symlink:
+#   vim ~/bin/gfs.sh          # your work env (see profile.example/company.sh.example)
+#   ln -sf ~/bin/gfs.sh local/profile/company.sh
+#
+# Toggle a file:  dotfiles disable company   (name = basename without .sh)
+# Keep drop-ins SILENT (no echo).

@@ -1,3 +1,0 @@
-# 10–19: login zsh only. Copy to 10-login.sh (gitignored).
-#
-# export MY_CLUSTER="login-node"

@@ -1,4 +1,4 @@
-.TH DOTFILES 1 "2026-06-18" "dotfiles" "Dotfiles Manual"
+.TH DOTFILES 1 "2026-06-22" "dotfiles" "Dotfiles Manual"
 .SH NAME
 dotfiles \- manage the dotfiles shell framework
 .SH SYNOPSIS
@@ -45,6 +45,9 @@ run the bats smoke tests in test/
 .B bench [N]
 benchmark interactive zsh startup (N runs, default 10)
 .TP
+.B sync <host:path>
+rsync repo from a remote machine (includes dotfiles; see: dotfiles help sync)
+.TP
 .B profile
 start a zsh that prints a zprof startup timing report
 .TP
@@ -61,9 +64,9 @@ ZDOTDIR: zsh startup files.
 .B $DOTFILES_DIR/var
 Generated, gitignored tools/plugins/cache.
 .TP
-.B $DOTFILES_LOCAL
-Flat NN-name.sh drop-ins (00–99). Only *.example templates are tracked;
-Templates: LO-HI-name.example (range in name). Real files: NN-name.sh.
+.B $DOTFILES_LOCAL/profile
+Semantic drop-ins: secrets login aliases tools company (.sh). Only
+profile.example/ templates are tracked; your profile/*.sh are gitignored.
 .TP
 .B $DOTFILES_LOCAL/disabled
 Persisted module toggles (dotfiles disable).

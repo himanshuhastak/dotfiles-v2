@@ -10,17 +10,12 @@ _dotfiles_disabled() {
   return 1
 }
 
-# _load_dir DIR [EXT]
-# Source DIR/*.EXT in sorted order (EXT defaults to sh). Each file:
-#   - is skipped if unreadable or if its basename (minus an NN- prefix and
-#     extension) appears in $DOTFILES_DISABLE.
-# Sorted order lets numeric prefixes (00-, 30-) control load order; unprefixed
-# files are order-independent. nullglob is handled per-shell so an empty dir is
-# a no-op rather than sourcing a literal glob.
 # _load_file FILE — source one drop-in (honouring NN- prefix + $DOTFILES_DISABLE).
-# Kept separate from _load_dir so the loop body is shared between the zsh and
-# bash globbing branches. NOTE: nothing here sets LOCAL_OPTIONS, so `setopt`s
-# inside the sourced modules persist globally (as intended).
+# Skips unreadable files. Strips an optional NN- numeric prefix to derive the
+# module name checked against $DOTFILES_DISABLE (e.g. "30-fzf.sh" → "fzf").
+# Profile files have no NN- prefix; their basename is used directly ("company").
+# NOTE: nothing here sets LOCAL_OPTIONS, so `setopt`s inside sourced modules
+# persist globally (as intended).
 _load_file() {
   local f=$1 base
   [ -r "$f" ] || return 0
@@ -32,6 +27,10 @@ _load_file() {
   . "$f"
 }
 
+# _load_dir DIR [EXT]
+# Source DIR/*.EXT in sorted order (EXT defaults to sh), calling _load_file on
+# each. Sorted order lets numeric prefixes (00-, 30-) control load order;
+# unprefixed files are order-independent. A missing or empty dir is a no-op.
 _load_dir() {
   local d=$1 ext=${2:-sh} f
   [ -d "$d" ] || return 0
@@ -49,28 +48,15 @@ _load_dir() {
   fi
 }
 
-# _load_local LO HI — source $DOTFILES_LOCAL/NN-*.sh where NN (00–99) is in [LO, HI].
-# Flat per-user drop-ins; number sets load phase (see docs/NAMING.md).
-_load_local() {
-  local lo=$1 hi=$2 d="${DOTFILES_LOCAL:-}" f base nn
-  [ -d "$d" ] || return 0
-  if [ -n "${ZSH_VERSION:-}" ]; then
-    eval 'for f in "$d"/[0-9][0-9]-*.sh(N); do
-      base=${f##*/}; nn=${base%%-*}
-      [ "$nn" -ge "'"$lo"'" ] && [ "$nn" -le "'"$hi"'" ] || continue
-      _load_file "$f"
-    done'
-  else
-    local _ng
-    _ng=$(shopt -p nullglob 2>/dev/null)
-    shopt -s nullglob 2>/dev/null
-    for f in "$d"/[0-9][0-9]-*.sh; do
-      base=${f##*/}; nn=${base%%-*}
-      [ "$nn" -ge "$lo" ] && [ "$nn" -le "$hi" ] || continue
-      _load_file "$f"
-    done
-    eval "${_ng:-}"
-  fi
+# _load_profile NAME — source $DOTFILES_LOCAL/profile/NAME.sh (semantic drop-in).
+# Stable filenames (secrets, login, aliases, tools, company); load timing is
+# fixed by the zsh entrypoints — see docs/NAMING.md. Symlinks are fine
+# (e.g. company.sh -> ~/bin/gfs.sh outside the repo).
+_load_profile() {
+  local name=$1 f
+  [ -n "$name" ] || return 0
+  f="${DOTFILES_LOCAL}/profile/${name}.sh"
+  _load_file "$f"
 }
 
 # _eval_cached NAME "CMD …" — zsh only.

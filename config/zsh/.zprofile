@@ -4,6 +4,8 @@
 # Self-heal stow symlinks once per login (NFS-shared home safety net).
 (( ${+commands[dotfiles]} )) && dotfiles stow --if-needed >/dev/null 2>&1
 
-# Host/user login tweaks (untracked, in $HOME — never the repo).
+# Personal login setup (cluster modules, login-only exports).
+_load_profile login
+
+# Host/user-specific login tweaks (untracked, in $HOME — never the repo).
 [[ -r ~/.zprofile.$USER ]] && . ~/.zprofile.$USER
-_load_local 10 19

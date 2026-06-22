@@ -9,9 +9,9 @@ setup() {
   export DOTFILES_LOCAL="$HOME/.config/dotfiles.local"
 }
 
-@test "loader defines _load_dir, _load_file, _defer, _eval_cached" {
+@test "loader defines _load_dir, _load_file, _load_profile, _defer, _eval_cached" {
   run bash -c '. "$DOTFILES_DIR/config/shell/loader.sh"
-    type _load_dir _load_file _defer >/dev/null'
+    type _load_dir _load_file _load_profile _defer >/dev/null'
   [ "$status" -eq 0 ]
 }
 
@@ -60,11 +60,33 @@ setup() {
 @test "login zsh sources .zprofile from ZDOTDIR" {
   command -v zsh >/dev/null || skip "zsh not installed"
   ln -s "$DOTFILES_DIR/config/stow/home/.zshenv" "$HOME/.zshenv"
-  mkdir -p "$DOTFILES_LOCAL"
-  printf '%s\n' 'print zprofile-local-ran' > "$DOTFILES_LOCAL/10-test.sh"
-  run env -i HOME="$HOME" USER=test LOGNAME=test TERM=xterm-256color zsh -l -c 'print done'
+  mkdir -p "$DOTFILES_LOCAL/profile"
+  printf '%s\n' 'print zprofile-local-ran' > "$DOTFILES_LOCAL/profile/login.sh"
+  run env -i HOME="$HOME" DOTFILES_DIR="$DOTFILES_DIR" DOTFILES_LOCAL="$DOTFILES_LOCAL" \
+    USER=test LOGNAME=test TERM=xterm-256color zsh -l -c 'echo done'
   [ "$status" -eq 0 ]
   [[ "$output" == *"zprofile-local-ran"* ]]
+  [[ "$output" == *"done"* ]]
+}
+
+@test "_load_profile sources secrets in non-interactive zsh" {
+  command -v zsh >/dev/null || skip "zsh not installed"
+  mkdir -p "$DOTFILES_LOCAL/profile"
+  printf '%s\n' 'echo secrets-loaded' > "$DOTFILES_LOCAL/profile/secrets.sh"
+  run zsh -c '. "$DOTFILES_DIR/config/zsh/.zshenv"; echo done'
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"secrets-loaded"* ]]
+  [[ "$output" == *"done"* ]]
+}
+
+@test "_load_profile company is not loaded by bash shrc" {
+  local dl="$BATS_TEST_TMPDIR/company.local"
+  mkdir -p "$dl/profile"
+  printf '%s\n' 'echo company-ran' > "$dl/profile/company.sh"
+  run env DOTFILES_DIR="$DOTFILES_DIR" DOTFILES_LOCAL="$dl" HOME="$HOME" \
+    bash -c '. "$DOTFILES_DIR/config/shell/shrc"; echo done'
+  [ "$status" -eq 0 ]
+  [[ "$output" != *"company-ran"* ]]
   [[ "$output" == *"done"* ]]
 }
 
@@ -74,6 +96,7 @@ setup() {
   [[ "$output" == *compile* ]]
   [[ "$output" == *stow* ]]
   [[ "$output" == *bench* ]]
+  [[ "$output" == *sync* ]]
 }
 
 @test "dotfiles doc man generates man/dotfiles.1" {
