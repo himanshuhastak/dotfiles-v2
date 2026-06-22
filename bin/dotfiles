@@ -340,8 +340,19 @@ cmd_test() {
 
 cmd_bench() {
   command -v zsh >/dev/null 2>&1 || die "bench: zsh not found"
-  local n="${1:-10}" i s e t total=0
+  local n="${1:-10}"
+
+  # Prefer hyperfine: gives proper stats (mean, stddev, min, max) with warmup.
+  if command -v hyperfine >/dev/null 2>&1; then
+    echo "Using hyperfine (statistical benchmarking, warmup=3, runs=$n)…"
+    hyperfine --warmup 3 --runs "$n" --shell=none 'zsh -i -c exit'
+    return
+  fi
+
+  # Fallback: manual timing loop.
+  local i s e t total=0
   echo "Benchmarking $n interactive zsh startups (zsh -i -c exit)…"
+  echo "(install hyperfine for richer stats: dotfiles update-tools hyperfine)"
   for i in $(seq 1 "$n"); do
     s="$(date +%s.%N)"; zsh -i -c exit </dev/null >/dev/null 2>&1; e="$(date +%s.%N)"
     t="$(awk "BEGIN{print ($e-$s)*1000}")"

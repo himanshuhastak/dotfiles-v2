@@ -358,3 +358,44 @@ description = "Zsh shell"
 category = "shells"
 install_method = "source"
 optional = true
+
+# ── New additions: gap-filling modern tools ───────────────────────────────────
+
+[[tool]]
+name = "hyperfine"
+repo = "sharkdp/hyperfine"
+archive_pattern = "hyperfine-{ver}-{arch}-unknown-linux-musl.tar.gz"
+binname = "hyperfine"
+description = "Statistical benchmarking (warmup, stddev, regression)"
+category = "development"
+# Used by: dotfiles bench (prefers hyperfine over manual time loop)
+
+[[tool]]
+name = "glow"
+repo = "charmbracelet/glow"
+archive_pattern = "glow_{ver}_linux_{arch}.tar.gz"
+binname = "glow"
+description = "Markdown renderer for the terminal"
+category = "utilities"
+aliases = [["mdcat", "glow"]]
+# Usage: glow README.md  |  glow -p <file>  (paged)
+
+[[tool]]
+name = "xh"
+repo = "ducaale/xh"
+archive_pattern = "xh-{ver}-{arch}-unknown-linux-musl.tar.gz"
+binname = "xh"
+description = "Friendly HTTP client (httpie-compatible, Rust)"
+category = "utilities"
+aliases = [["http", "xh"], ["https", "xh --https"]]
+optional = true
+
+[[tool]]
+name = "watchexec"
+repo = "watchexec/watchexec"
+archive_pattern = "watchexec-{ver}-{arch}-unknown-linux-musl.tar.xz"
+binname = "watchexec"
+description = "File watcher that re-runs commands on change"
+category = "productivity"
+aliases = [["watch-run", "watchexec"]]
+optional = true

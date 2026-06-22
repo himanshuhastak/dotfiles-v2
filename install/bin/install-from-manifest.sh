@@ -9,7 +9,21 @@ source "$(dirname "$0")/../common.sh"
 
 MANIFEST="${DOTFILES}/config/tools.toml"
 LOCK_FILE="${DOTFILES}/config/tools.lock"
-PARALLEL_JOBS="${PARALLEL_JOBS:-4}"  # default 4 concurrent installs
+
+# Auto-detect available CPU cores; cap at 8 to avoid overwhelming slow disks.
+_cpu_count() {
+  if command -v nproc >/dev/null 2>&1; then
+    nproc
+  elif command -v sysctl >/dev/null 2>&1; then
+    sysctl -n hw.logicalcpu 2>/dev/null || echo 4
+  else
+    echo 4
+  fi
+}
+_detected=$(( $(_cpu_count) > 8 ? 8 : $(_cpu_count) ))
+PARALLEL_JOBS="${PARALLEL_JOBS:-$_detected}"
+unset _detected
+
 INSTALL_MODE="auto"  # auto, parallel, sequential
 SAVE_LOCK=0
 

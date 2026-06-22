@@ -8,10 +8,22 @@ export FZF_DEFAULT_OPTS="${FZF_DEFAULT_OPTS:---height 60% --layout=reverse --bor
 --color=info:#89b4fa,prompt:#cba6f7,pointer:#f5e2af \
 --color=marker:#94e2d5,spinner:#f9e2af,header:#94e2d5}"
 
-# Set up FZF_DEFAULT_COMMAND if fd is available
+# fd as the default file source (respects .gitignore, much faster than find).
 if command -v fd >/dev/null 2>&1; then
   export FZF_DEFAULT_COMMAND='fd --type f --hidden --follow --exclude .git'
   export FZF_CTRL_T_COMMAND="$FZF_DEFAULT_COMMAND"
+fi
+
+# bat preview for Ctrl-T file picker (syntax-highlighted, first 500 lines).
+if command -v bat >/dev/null 2>&1; then
+  export FZF_CTRL_T_OPTS="${FZF_CTRL_T_OPTS---preview 'bat --color=always --style=numbers --line-range :500 {}' --preview-window=right:55%:wrap}"
+fi
+
+# eza/ls tree preview for Alt-C directory picker.
+if command -v eza >/dev/null 2>&1; then
+  export FZF_ALT_C_OPTS="${FZF_ALT_C_OPTS---preview 'eza --tree --level=2 --color=always --icons=auto {}'}"
+elif command -v ls >/dev/null 2>&1; then
+  export FZF_ALT_C_OPTS="${FZF_ALT_C_OPTS---preview 'ls -la {}'}"
 fi
 
 # Initialize shell integration (deferred in zsh, sync in bash)
