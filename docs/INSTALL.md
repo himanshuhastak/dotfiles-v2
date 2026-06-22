@@ -60,12 +60,30 @@ rm -rf var && ./install.sh
 
 Copy `local/profile.example/*.example` to `local/profile/*.sh` — your copies are gitignored.
 
-For `company.sh` (cluster / LSF), keep the real file outside the repo and symlink so `dotfiles sync` never overwrites it:
+For cluster / work machines, keep everything in `~/bin/gfs/` (outside the repo):
 
 ```sh
-vim ~/bin/gfs.sh
-ln -sf ~/bin/gfs.sh local/profile/company.sh
+mkdir -p ~/bin/gfs
+cp local/gfs.example/* ~/bin/gfs/
+vim ~/bin/gfs/company.sh ~/bin/gfs/mount.lst
+ln -sf ~/bin/gfs/company.sh local/profile/company.sh
+dotfiles work-stow
 ```
+
+`mount.lst` format: `path:shortname` (one per line). Defaults in the template:
+
+```
+/scratch/$USER:scratch
+/tmp:tmp
+```
+
+## ~/Work disk links
+
+```sh
+dotfiles work-stow    # reads ~/bin/gfs/mount.lst -> ~/Work/scratch, ~/Work/tmp, …
+```
+
+Edit `~/bin/gfs/mount.lst`, then re-run `dotfiles work-stow`.
 
 ## Sync from another machine
 
@@ -86,6 +104,7 @@ rsync -avzl -e ssh \
   --exclude '.git/' \
   --exclude 'local/profile/*.sh' \
   --exclude 'local/disabled' \
+  --exclude 'local/work/mounts/' \
   arctest5:~/dotfiles-v2/ \
   ~/dotfiles-v2/
 ```

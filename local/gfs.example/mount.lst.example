@@ -1,0 +1,3 @@
+# path:shortname — one per line (# comments ok; $USER expands)
+/scratch/$USER:scratch
+/tmp:tmp

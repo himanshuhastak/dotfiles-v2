@@ -38,6 +38,7 @@ exec zsh
 | `dotfiles reload` | recompile + re-exec the shell |
 | `dotfiles compile` | byte-compile the framework (`.zwc`) |
 | `dotfiles stow [--if-needed]` | (re)create symlinks |
+| `dotfiles work-stow [--if-needed]` | stow `~/Work` disk links (scratch, tmp, …) |
 | `dotfiles doctor` | health checks |
 | `dotfiles check` | lint scripts (shellcheck `.sh` + zsh -n/zshellcheck `.zsh` + actionlint + editorconfig) |
 | `dotfiles audit` | scan the working tree for secrets (betterleaks) |

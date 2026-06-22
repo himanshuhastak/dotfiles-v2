@@ -95,6 +95,7 @@ setup() {
   [ "$status" -eq 0 ]
   [[ "$output" == *compile* ]]
   [[ "$output" == *stow* ]]
+  [[ "$output" == *work-stow* ]]
   [[ "$output" == *bench* ]]
   [[ "$output" == *sync* ]]
 }

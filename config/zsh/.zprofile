@@ -3,6 +3,7 @@
 
 # Self-heal stow symlinks once per login (NFS-shared home safety net).
 (( ${+commands[dotfiles]} )) && dotfiles stow --if-needed >/dev/null 2>&1
+(( ${+commands[dotfiles]} )) && dotfiles work-stow --if-needed >/dev/null 2>&1
 
 # Personal login setup (cluster modules, login-only exports).
 _load_profile login

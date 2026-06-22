@@ -109,6 +109,21 @@ real `profile/*.sh` files are gitignored.
 | `tools.sh` | interactive zsh (after compinit) | `_defer` tool inits |
 | `company.sh` | interactive zsh (last) | work / LSF / cluster env |
 
-`company.sh` is often a symlink to a file outside the repo (e.g. `~/bin/gfs.sh`)
-so `dotfiles sync` never overwrites machine-specific cluster setup. Toggle any
-file with `dotfiles disable <name>` (basename without `.sh`).
+`company.sh` is a symlink to `~/bin/gfs/company.sh` (cluster / LSF env).
+Disk shortcuts come from `~/bin/gfs/mount.lst` via `dotfiles work-stow`.
+
+## ~/Work mounts (`~/bin/gfs/mount.lst`)
+
+`path:shortname` lines (comments with `#` ok; `$USER` expands):
+
+| Link | Typical line |
+|---|---|
+| `scratch` | `/scratch/$USER:scratch` |
+| `tmp` | `/tmp:tmp` |
+
+```sh
+dotfiles work-stow   # stows into ~/Work/
+```
+
+Edit `~/bin/gfs/mount.lst`, then re-run `dotfiles work-stow`. Use `cd ~work`
+after stowing (zsh named dir).

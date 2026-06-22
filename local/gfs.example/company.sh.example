@@ -1,0 +1,10 @@
+# company.sh — work / cluster env (interactive last). Keep SILENT (no echo).
+#
+# Copy the whole gfs.example/ tree to ~/bin/gfs/, then symlink into profile:
+#   mkdir -p ~/bin/gfs
+#   cp local/gfs.example/* ~/bin/gfs/
+#   ln -sf ~/bin/gfs/company.sh local/profile/company.sh
+#
+unalias sed 2>/dev/null
+source /tool/lsf/conf/profile.lsf
+source /etc/profile.d/modules.sh

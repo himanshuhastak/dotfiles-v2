@@ -64,18 +64,23 @@ exec zsh
 
 Skip one file on a machine: `dotfiles disable company`.
 
-### `company.sh` outside the repo (recommended for cluster env)
+### `~/bin/gfs` (recommended for cluster / work machines)
 
-Keep the real file on disk outside the git tree and symlink into `profile/`:
+One directory outside the repo for machine-specific work setup:
 
 ```sh
-vim ~/bin/gfs.sh
-ln -sf ~/bin/gfs.sh local/profile/company.sh
+mkdir -p ~/bin/gfs
+cp local/gfs.example/* ~/bin/gfs/
+ln -sf ~/bin/gfs/company.sh local/profile/company.sh
 ```
 
-`dotfiles sync` excludes `local/profile/*.sh`, so the symlink and its target
-(`~/bin/gfs.sh`) survive remote pulls. `install/cleanup.sh` removes
-`local/profile/` but not `~/bin/`.
+| File | Purpose |
+|---|---|
+| `company.sh` | LSF / cluster shell env (`_load_profile company`) |
+| `mount.lst` | `path:shortname` lines for `dotfiles work-stow` → `~/Work/` |
+
+`dotfiles sync` excludes `local/profile/*.sh` and `local/work/`; `~/bin/gfs/`
+is never touched by rsync.
 
 ## Host-specific tweaks (outside the repo)
 

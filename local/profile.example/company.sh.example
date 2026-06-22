@@ -1,12 +1,2 @@
-# company.sh — work / cluster env (interactive last). Keep SILENT (no echo).
-# Real file is gitignored. Prefer keeping it outside the repo and symlinking:
-#   ln -sf ~/bin/gfs.sh local/profile/company.sh
-#
-# gfs / LSF example:
-# unalias sed 2>/dev/null   # conf.d/sd.sh does NOT alias sed; LSF needs real sed
-# source /tool/lsf/conf/profile.lsf
-# source /etc/profile.d/modules.sh
-#
-# Generic company example:
-# export WORK_ROOT="$HOME/work"
-# _path_prepend "/opt/company/bin"; export PATH
+# company.sh — symlink to ~/bin/gfs/company.sh (see local/gfs.example/).
+#   ln -sf ~/bin/gfs/company.sh local/profile/company.sh

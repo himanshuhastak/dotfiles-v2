@@ -29,3 +29,7 @@ local/**
 !local/profile.example/**
 !local/profile/
 !local/profile/.gitignore
+!local/gfs.example/
+!local/gfs.example/**
+!local/work/
+!local/work/.gitignore

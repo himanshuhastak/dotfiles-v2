@@ -51,7 +51,7 @@ _load_dir() {
 # _load_profile NAME — source $DOTFILES_LOCAL/profile/NAME.sh (semantic drop-in).
 # Stable filenames (secrets, login, aliases, tools, company); load timing is
 # fixed by the zsh entrypoints — see docs/NAMING.md. Symlinks are fine
-# (e.g. company.sh -> ~/bin/gfs.sh outside the repo).
+# (e.g. company.sh -> ~/bin/gfs/company.sh outside the repo).
 _load_profile() {
   local name=$1 f
   [ -n "$name" ] || return 0
