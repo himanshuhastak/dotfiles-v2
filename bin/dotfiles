@@ -35,6 +35,7 @@ check	lint scripts (shellcheck .sh + zsh -n/zshellcheck .zsh + actionlint + edit
 audit	scan the working tree for secrets (betterleaks)
 test	run the bats smoke tests in test/
 bench [N]	benchmark interactive zsh startup (N runs, default 10)
+sync <host:path>	rsync repo from a remote machine (includes dotfiles; see: dotfiles help sync)
 profile	start a zsh that prints a zprof startup timing report
 doc [man]	regenerate the man page from this help
 help	show this help
@@ -289,6 +290,28 @@ cmd_bench() {
   awk "BEGIN{printf \"  ----\n  avg:   %7.1f ms over %d run(s)\n\", $total/$n, $n}"
 }
 
+# Pull the repo from a remote host via rsync.
+# Uses SOURCE/ (trailing slash) so dotfiles (.gitignore, .editorconfig, …) copy
+# correctly — never use SOURCE/* (shell glob skips hidden files).
+cmd_sync() {
+  local src="${1:-${DOTFILES_SYNC_SOURCE:-}}"
+  [ -n "$src" ] || die "sync: need SOURCE (e.g. arctest5:~/dotfiles-v2/) or set DOTFILES_SYNC_SOURCE"
+  case "$src" in */) ;; *) src="${src}/" ;; esac
+
+  local rsync_cmd=rsync
+  command -v oc-rsync >/dev/null 2>&1 && rsync_cmd=oc-rsync
+  command -v "$rsync_cmd" >/dev/null 2>&1 || die "sync: rsync not found"
+
+  printf '%s==>%s syncing %s -> %s/\n' "$c_b" "$c_r" "$src" "$DOTFILES_DIR"
+  "$rsync_cmd" -avzl -e ssh \
+    --exclude 'var/' \
+    --exclude '*.zwc' \
+    --exclude '.git/' \
+    --exclude 'local/profile/*.sh' \
+    --exclude 'local/disabled' \
+    "$src" "$DOTFILES_DIR/"
+}
+
 cmd_profile() {
   command -v zsh >/dev/null 2>&1 || die "profile: zsh not found"
   echo "Starting a profiled interactive zsh (exit it to return)..."
@@ -356,6 +379,7 @@ main() {
     audit)           cmd_audit "$@" ;;
     test)            cmd_test "$@" ;;
     bench)           cmd_bench "$@" ;;
+    sync)            cmd_sync "$@" ;;
     update)          cmd_update "$@" ;;
     profile)         cmd_profile "$@" ;;
     doc)             cmd_doc "$@" ;;

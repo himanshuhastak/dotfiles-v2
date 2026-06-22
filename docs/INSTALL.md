@@ -60,6 +60,31 @@ rm -rf var && ./install.sh
 
 Copy `local/profile.example/*.example` to `local/profile/*.sh` — your copies are gitignored.
 
+## Sync from another machine
+
+Use a **trailing slash** on the source path so hidden files (`.gitignore`, `.editorconfig`, …) copy correctly. Never use `SOURCE/*` — the shell glob skips dotfiles.
+
+```sh
+dotfiles sync arctest5:~/dotfiles-v2/
+# or set once:  export DOTFILES_SYNC_SOURCE=arctest5:~/dotfiles-v2/
+dotfiles sync
+```
+
+Equivalent manual command:
+
+```sh
+rsync -avzl -e ssh \
+  --exclude 'var/' \
+  --exclude '*.zwc' \
+  --exclude '.git/' \
+  --exclude 'local/profile/*.sh' \
+  --exclude 'local/disabled' \
+  arctest5:~/dotfiles-v2/ \
+  ~/dotfiles-v2/
+```
+
+`local/profile/*.sh` and `local/disabled` are excluded so machine-specific secrets stay on each host. Templates (`profile.example/`, `local/profile/.gitignore`) still copy.
+
 ## Uninstall
 
 1. `install/cleanup.sh` (unstows symlinks, backs up state).

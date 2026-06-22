@@ -1,0 +1,9 @@
+# shellcheck configuration for the dotfiles install + shell scripts.
+# These files are sourced fragments (not standalone programs), so a few checks
+# are noisy/irrelevant here:
+disable=SC1090   # can't follow non-constant `source`/`.` paths (dynamic by design)
+disable=SC1091   # not following sourced files (they're checked on their own)
+disable=SC2034   # vars set here are consumed by other sourced files
+disable=SC2155   # `local x=$(...)` masking return — acceptable in these helpers
+disable=SC2046   # intentional word-splitting in a few install helpers
+external-sources=true

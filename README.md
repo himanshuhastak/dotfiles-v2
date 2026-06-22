@@ -43,6 +43,7 @@ exec zsh
 | `dotfiles audit` | scan the working tree for secrets (betterleaks) |
 | `dotfiles test` | run the bats smoke tests |
 | `dotfiles bench [N]` | benchmark startup time |
+| `dotfiles sync <host:path>` | rsync repo from remote (copies dotfiles correctly) |
 | `dotfiles profile` | zprof timing report |
 | `dotfiles doc man` | regenerate `man dotfiles` |
 

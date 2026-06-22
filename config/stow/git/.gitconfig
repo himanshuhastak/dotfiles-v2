@@ -17,7 +17,7 @@
 [delta]
 	navigate = true
 	line-numbers = true
-	side-by-side = false
+	side-by-side = true
 	features = catppuccin-mocha
 [include]
 	path = ~/.config/delta/catppuccin.gitconfig

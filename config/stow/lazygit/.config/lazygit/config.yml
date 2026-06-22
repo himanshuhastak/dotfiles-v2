@@ -32,4 +32,4 @@ gui:
 git:
   paging:
     colorArg: always
-    pager: delta --paging=never
+    pager: delta --side-by-side --paging=never
