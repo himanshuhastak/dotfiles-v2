@@ -27,13 +27,16 @@ _parse_tools() {
       next
     }
     /^name[[:space:]]*=/ {
-      match($0, /"([^"]+)"/, a); name = a[1]
+      gsub(/^[^"]*"/, "", $0); gsub(/".*/, "", $0)
+      name = $0
     }
     /^repo[[:space:]]*=/ {
-      match($0, /"([^"]+)"/, a); repo = a[1]
+      gsub(/^[^"]*"/, "", $0); gsub(/".*/, "", $0)
+      repo = $0
     }
     /^description[[:space:]]*=/ {
-      match($0, /"([^"]+)"/, a); desc = a[1]
+      gsub(/^[^"]*"/, "", $0); gsub(/".*/, "", $0)
+      desc = $0
     }
     END {
       if (name != "") print name "|" repo "|" desc
@@ -45,8 +48,10 @@ _parse_tools() {
 cmd_doctor_tools() {
   log "Tool Health Check"
   local total=0 healthy=0 issues=0
+  local entries
+  entries=$(_parse_tools)
 
-  _parse_tools | while IFS='|' read -r name repo desc; do
+  while IFS='|' read -r name repo desc; do
     [ -z "$name" ] && continue
     total=$((total + 1))
     
@@ -54,7 +59,7 @@ cmd_doctor_tools() {
     [ -n "$desc" ] && printf '  %s\n' "$desc"
     
     # Check binary exists
-    if [ -x "$BIN/$name" ] || command -v "$name" >/dev/null 2>&1; then
+    if [ -x "$BIN/$name" ] 2>/dev/null || command -v "$name" >/dev/null 2>&1; then
       ok "Binary found in PATH"
       healthy=$((healthy + 1))
       
@@ -73,7 +78,7 @@ cmd_doctor_tools() {
     if [ -f "$DOTFILES_DIR/config/shell/conf.d"/*"$name"* ] 2>/dev/null; then
       ok "Hook file exists"
     fi
-  done
+  done <<<"$entries"
 
   echo ""
   printf '%s━━━━━━━━━━━━━━━━━━━%s\n' "$c_b" "$c_r"
