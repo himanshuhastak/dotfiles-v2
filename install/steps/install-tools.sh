@@ -9,10 +9,11 @@ INSTALL_DIR="$SCRIPTS/.."
 BIN_DIR="$INSTALL_DIR/bin"
 MANIFEST="$SCRIPTS/../../config/tools.toml"
 
-# Try manifest-based installation first
-if [ -f "$MANIFEST" ] && [ -x "$BIN_DIR/install-from-manifest.sh" ]; then
+# Try manifest-based installation first (-r not -x: scripts are invoked via bash).
+if [ -f "$MANIFEST" ] && [ -r "$BIN_DIR/install-from-manifest.sh" ]; then
   bash "$BIN_DIR/install-from-manifest.sh" "$@"
 else
+  warn "manifest installer unavailable — falling back to legacy sequential install"
   # Fallback to legacy per-tool script installation for backward compatibility
   source "$INSTALL_DIR/common.sh"
   init_tools_dir

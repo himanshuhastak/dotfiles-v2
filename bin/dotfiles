@@ -500,7 +500,7 @@ cmd_update() {
 
 cmd_update_tools() {
   local install_script="$DOTFILES_DIR/install/bin/install-from-manifest.sh"
-  [ -x "$install_script" ] || die "update-tools: manifest installer not found ($install_script)"
+  [ -r "$install_script" ] || die "update-tools: manifest installer not found ($install_script)"
   
   if [ "$#" -eq 0 ] || ([ "$#" -eq 1 ] && [ "$1" = "--all" ]); then
     # Update all tools
