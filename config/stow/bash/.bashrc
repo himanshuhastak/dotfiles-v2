@@ -49,8 +49,20 @@ if [ ! -x "$_df_zsh" ]; then
   return 1
 fi
 
-# Fresh zsh login: drop bash/inherited env; pass DOTFILES_DIR so ~/.zshenv finds the repo.
+# Fresh zsh handoff: drop bash/inherited env; pass DOTFILES_DIR so ~/.zshenv finds the repo.
+#
+# DOTFILES_ZSH_LOGIN — login vs non-login zsh (default: login).
+#   login (1|yes|true)     → zsh -l  — runs $ZDOTDIR/.zprofile (stow, X11, login profile)
+#   non-login (0|no|false) → zsh     — skips .zprofile; stow deferred in 50-ensure-stowed.zsh
+#
+# SSH X11 vars (DISPLAY, XAUTHORITY) are always forwarded when set so GUI tools work
+# after handoff. Example: DOTFILES_ZSH_LOGIN=0 ssh -X host
 _user="${USER:-$(id -un)}"
+_df_login=1
+case "${DOTFILES_ZSH_LOGIN:-1}" in
+  0|no|nonlogin|non-login|false|FALSE) _df_login=0 ;;
+esac
+
 _env=( -i
   "HOME=$HOME"
   "USER=$_user"
@@ -59,8 +71,17 @@ _env=( -i
   "SHELL=$_df_zsh"
   "DOTFILES_DIR=${DOTFILES_DIR:-}"
 )
-[[ -n "${LANG:-}" ]]   && _env+=( "LANG=$LANG" )
-[[ -n "${LC_ALL:-}" ]] && _env+=( "LC_ALL=$LC_ALL" )
+[[ -n "${LANG:-}" ]]            && _env+=( "LANG=$LANG" )
+[[ -n "${LC_ALL:-}" ]]           && _env+=( "LC_ALL=$LC_ALL" )
+[[ -n "${DISPLAY:-}" ]]          && _env+=( "DISPLAY=$DISPLAY" )
+[[ -n "${XAUTHORITY:-}" ]]       && _env+=( "XAUTHORITY=$XAUTHORITY" )
+[[ -n "${SSH_CONNECTION:-}" ]]   && _env+=( "SSH_CONNECTION=$SSH_CONNECTION" )
+[[ -n "${SSH_CLIENT:-}" ]]       && _env+=( "SSH_CLIENT=$SSH_CLIENT" )
+[[ -n "${DOTFILES_ZSH_LOGIN:-}" ]] && _env+=( "DOTFILES_ZSH_LOGIN=$DOTFILES_ZSH_LOGIN" )
 
 unset _dfself _df_resolve _user
-exec env "${_env[@]}" "$_df_zsh" -l
+if (( _df_login )); then
+  exec env "${_env[@]}" "$_df_zsh" -l
+else
+  exec env "${_env[@]}" "$_df_zsh"
+fi

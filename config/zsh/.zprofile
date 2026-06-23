@@ -1,4 +1,5 @@
-# $ZDOTDIR/.zprofile — login shells only (bash handoff uses `env -i … zsh -l`).
+# $ZDOTDIR/.zprofile — login shells only (bash handoff: `env -i … zsh -l` by default;
+# set DOTFILES_ZSH_LOGIN=0 for non-login handoff — see config/stow/bash/.bashrc).
 # Not run for `zsh -c`, non-login subshells, or scripts. Env/PATH are in .zshenv.
 
 # Self-heal stow symlinks once per login (NFS-shared home safety net).

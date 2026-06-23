@@ -79,3 +79,22 @@ Generated work-stow symlinks live in `var/work/` (not `local/` or `config/stow/`
 | `~/.zprofile.$USER` | host/user-specific login tweaks |
 
 Override the local root with `export DOTFILES_LOCAL=/path/to/other` if needed.
+
+### Bash → zsh handoff (`~/.bashrc`)
+
+Interactive bash execs a clean `env -i` zsh session. Control login vs non-login:
+
+| `DOTFILES_ZSH_LOGIN` | Handoff | `.zprofile` |
+|---|---|---|
+| `1` / `yes` / unset (default) | `zsh -l` | runs |
+| `0` / `no` / `nonlogin` | `zsh` | skipped |
+
+`DISPLAY`, `XAUTHORITY`, and SSH client vars are forwarded when set (X11 over SSH).
+
+```sh
+# non-login handoff for one session
+export DOTFILES_ZSH_LOGIN=0
+
+# or in local/profile/secrets.sh for a given machine
+export DOTFILES_ZSH_LOGIN=nonlogin
+```
