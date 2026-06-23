@@ -227,6 +227,13 @@ description = "Terminal multiplexer"
 category = "shells"
 aliases = [["tmux", "zellij"], ["zj", "zellij"]]
 
+[[tool]]
+name = "sheldon"
+repo = "rossmacarthur/sheldon"
+install_method = "script"
+description = "Zsh plugin manager (required — plugins cloned into var/vendor)"
+category = "shell-enhancement"
+
 # Supporting tools (no UI, backend)
 [[tool]]
 name = "jq"

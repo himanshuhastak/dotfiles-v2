@@ -8,7 +8,7 @@ init_tools_dir
 # Read config straight from the repo (don't depend on the ~/.config symlink),
 # and clone into the vendored data dir.
 cfg_dir="$STOW_DIR/sheldon/.config/sheldon"
-have sheldon || { warn "sheldon not installed (run scripts/tools/sheldon.sh)"; exit 1; }
+have sheldon || { warn "sheldon not installed (run install-tools or install/tools/sheldon.sh)"; exit 1; }
 [ -f "$cfg_dir/plugins.toml" ] || { warn "missing $cfg_dir/plugins.toml"; exit 1; }
 
 export SHELDON_CONFIG_DIR="$cfg_dir"

@@ -18,7 +18,8 @@ Steps (see `install/steps/`):
 1. **install-stow** — builds the bundled stow (python, no Perl) into `install/bin`.
 2. **fetch-themes** — Catppuccin Mocha assets (starship, bat, delta).
 3. **install-tools** — installs core CLIs into `var/tools/bin` in parallel. **Required:**
-   `zsh` (built from source). **Skipped by default** (use `--with-optional-tools`):
+   `zsh` (built from source), `sheldon` (zsh plugin manager), and other non-optional
+   entries in `config/tools.toml`. **Skipped by default** (use `--with-optional-tools`):
    latest `bash`, `ble.sh`, `rust`, `task`, `timew`, `bugwarrior`, and other
    `optional = true` entries in `config/tools.toml`.
 4. **install-zellij-plugins** — downloads `zsm`, `zjframes`, `monocle`
