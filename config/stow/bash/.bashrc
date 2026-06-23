@@ -58,11 +58,9 @@ fi
 # SSH X11 vars (DISPLAY, XAUTHORITY) are always forwarded when set so GUI tools work
 # after handoff. Example: DOTFILES_ZSH_LOGIN=0 ssh -X host
 _user="${USER:-$(id -un)}"
-<<<<<<< HEAD
+
 _df_login=0
-=======
-_df_login=1
->>>>>>> d67c3c3c907f4834a026cd8fd5db49602cc65754
+
 case "${DOTFILES_ZSH_LOGIN:-1}" in
   0|no|nonlogin|non-login|false|FALSE) _df_login=0 ;;
 esac
