@@ -1,0 +1,6 @@
+# ~/.config/ripgrep/ripgreprc — default ripgrep flags (stowed by dotfiles).
+# See: man rg  |  https://github.com/BurntSushi/ripgrep/blob/master/GUIDE.md#configuration-file
+
+--hidden
+--glob=!.git/*
+--smart-case
