@@ -8,6 +8,9 @@ set -uo pipefail
 source "$(dirname "$0")/../common.sh"
 export DOTFILES
 
+# Site/cluster PARALLEL_* env (e.g. --joblog, --results) must not leak into our installer.
+unset PARALLEL PARALLEL_OPTS 2>/dev/null || true
+
 MANIFEST="${DOTFILES}/config/tools.toml"
 LOCK_FILE="${DOTFILES}/config/tools.lock"
 
@@ -121,8 +124,6 @@ _install_one() {
   install_tool "$name" "$repo" "$archive_pattern" "${binname:-$name}" "${path_hint:-}"
 }
 
-export -f _install_one
-
 # _ensure_gnu_parallel — bootstrap GNU parallel into $BIN before batch install.
 _ensure_gnu_parallel() {
   local script="${DOTFILES}/install/tools/parallel.sh"
@@ -136,17 +137,19 @@ _ensure_gnu_parallel() {
 
 # _run_parallel_batch BATCH — install manifest lines with GNU parallel or xargs -P.
 _run_parallel_batch() {
-  local batch=$1
+  local batch=$1 worker="$DOTFILES/install/bin/install-one-entry.sh"
+  [ -r "$worker" ] || { warn "missing parallel worker: $worker"; return 1; }
   if command -v parallel >/dev/null 2>&1; then
-    printf '%s\n' "$batch" | parallel -j "$PARALLEL_JOBS" --halt soon,fail=1 _install_one
+    printf '%s\n' "$batch" | parallel -j "$PARALLEL_JOBS" --halt soon,fail=1 \
+      bash "$worker" {}
   elif command -v xargs >/dev/null 2>&1; then
     warn "GNU parallel unavailable; using xargs -P"
-    printf '%s\n' "$batch" | xargs -P "$PARALLEL_JOBS" -I {} bash -c '_install_one "$@"' _ {}
+    printf '%s\n' "$batch" | xargs -P "$PARALLEL_JOBS" -I {} bash "$worker" {}
   else
     warn "parallel and xargs unavailable; falling back to sequential"
     while IFS= read -r entry; do
       [ -z "$entry" ] && continue
-      _install_one "$entry" || return 1
+      bash "$worker" "$entry" || return 1
     done <<<"$batch"
   fi
 }
@@ -177,7 +180,8 @@ case "$INSTALL_MODE" in
     log "Installing sequentially"
     while IFS= read -r entry; do
       [ -z "$entry" ] && continue
-      _install_one "$entry" || { warn "Failed to install from entry: $entry"; }
+      bash "$DOTFILES/install/bin/install-one-entry.sh" "$entry" || \
+        { warn "Failed to install from entry: $entry"; }
     done <<<"$entries"
     ;;
   *)

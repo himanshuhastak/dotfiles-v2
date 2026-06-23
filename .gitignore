@@ -12,6 +12,10 @@
 /run.log
 /var/run.log
 
+# Accidental empty junk from shell redirects or leaked GNU parallel joblogs during install.
+/Found
+/Installing
+
 # Legacy generated locations (pre-restructure; ignored during migration).
 /.tools/
 /vendor/

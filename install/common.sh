@@ -90,7 +90,7 @@ download_url() {
   log "Installing $name"
   (
     cd "$tmp"
-    curl -fL --retry 3 --connect-timeout 20 -o file "$url" || exit 1
+    curl -fsSL --retry 3 --connect-timeout 20 -o file "$url" || exit 1
     case "$url" in
       *.tar.gz|*.tgz) tar -xzf file ;;
       *.tar.xz)       tar -xJf file ;;
