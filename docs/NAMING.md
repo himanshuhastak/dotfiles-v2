@@ -82,14 +82,16 @@ Override the local root with `export DOTFILES_LOCAL=/path/to/other` if needed.
 
 ### Bash → zsh handoff (`~/.bashrc`)
 
-Interactive bash execs a clean `env -i` zsh session. Control login vs non-login:
+Interactive bash execs a clean `env -i` login zsh via `config/shell/lib/bash-zsh-handoff.sh`.
+X11 (`DISPLAY`, `XAUTHORITY`, cookies) is handled in `.zprofile` on every login shell — SSH,
+LSF (`bsub -Is`), or plain login — not in `.bashrc`.
 
 | `DOTFILES_ZSH_LOGIN` | Handoff | `.zprofile` |
 |---|---|---|
 | `1` / `yes` / unset (default) | `zsh -l` | runs |
 | `0` / `no` / `nonlogin` | `zsh` | skipped |
 
-`DISPLAY`, `XAUTHORITY`, and SSH client vars are forwarded when set (X11 over SSH).
+`DISPLAY`, `XAUTHORITY`, SSH client vars, and `LSB_JOBID` are forwarded when set.
 
 ```sh
 # non-login handoff for one session
