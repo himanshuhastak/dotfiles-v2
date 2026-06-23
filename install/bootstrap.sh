@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # End-to-end dotfiles bootstrap.
-#   bootstrap.sh [--skip-fonts] [--skip-tools] [--fetch-theme]
+#   bootstrap.sh [--skip-fonts] [--skip-tools] [--fetch-theme] [--sequential-tools]
 set -uo pipefail
 
 INSTALL="$(cd "$(dirname "$0")" && pwd)"
@@ -10,11 +10,14 @@ source "$INSTALL/common.sh"
 SKIP_FONTS=0
 SKIP_TOOLS=0
 THEME_ARGS=()
+TOOL_ARGS=()
 for arg in "$@"; do
   case "$arg" in
-    --skip-fonts)  SKIP_FONTS=1 ;;
-    --skip-tools)  SKIP_TOOLS=1 ;;
-    --fetch-theme) THEME_ARGS+=(--force) ;;
+    --skip-fonts)        SKIP_FONTS=1 ;;
+    --skip-tools)        SKIP_TOOLS=1 ;;
+    --fetch-theme)       THEME_ARGS+=(--force) ;;
+    --sequential-tools)  TOOL_ARGS+=(--sequential) ;;
+    --parallel-tools)    TOOL_ARGS+=(--parallel) ;;
     *) warn "unknown arg: $arg" ;;
   esac
 done
@@ -26,7 +29,7 @@ run() {
 
 run install-stow.sh
 run fetch-themes.sh "${THEME_ARGS[@]}"
-[ "$SKIP_TOOLS" -eq 0 ] && run install-tools.sh || skip "tools (--skip-tools)"
+[ "$SKIP_TOOLS" -eq 0 ] && run install-tools.sh "${TOOL_ARGS[@]}" || skip "tools (--skip-tools)"
 run install-zellij-plugins.sh
 run stow-dotfiles.sh
 run install-sheldon-plugins.sh

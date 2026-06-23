@@ -17,7 +17,8 @@ Steps (see `install/steps/`):
 
 1. **install-stow** — builds the bundled stow (python, no Perl) into `install/bin`.
 2. **fetch-themes** — Catppuccin Mocha assets (starship, bat, delta).
-3. **install-tools** — installs ~30 CLIs into `var/tools/bin`, including the
+3. **install-tools** — installs ~30 CLIs into `var/tools/bin` (GNU parallel first,
+   then the rest in parallel; pass `--sequential-tools` to `install.sh` to opt out),
    quality tools `shellcheck`, `shfmt`, `bats`, `zshellcheck` (zsh linter),
    `betterleaks` (secrets), `actionlint`, `editorconfig-checker`. Self-owned;
    never reuses system/NFS binaries.
@@ -29,7 +30,7 @@ Steps (see `install/steps/`):
 7. **install-fonts** — JetBrainsMono Nerd Font.
 8. **fix-task-hooks**, then **compile** (`.zwc`) and **doc man**.
 
-Flags: `--skip-tools`, `--skip-fonts`, `--fetch-theme`.
+Flags: `--skip-tools`, `--skip-fonts`, `--fetch-theme`, `--sequential-tools`.
 
 ## After install
 

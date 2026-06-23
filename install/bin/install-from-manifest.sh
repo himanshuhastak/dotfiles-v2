@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # install/bin/install-from-manifest.sh — install tools from config/tools.toml manifest
-# Supports sequential or parallel installation (if GNU parallel/xargs available).
-# Usage: install-from-manifest.sh [--parallel | --sequential] [--save-lock]
+# Default: install GNU parallel first, then install remaining tools in parallel.
+# Usage: install-from-manifest.sh [--sequential] [--save-lock]
 #        PARALLEL_JOBS=N ./install-from-manifest.sh
 set -uo pipefail
 
@@ -25,7 +25,7 @@ _detected=$(( $(_cpu_count) > 8 ? 8 : $(_cpu_count) ))
 PARALLEL_JOBS="${PARALLEL_JOBS:-$_detected}"
 unset _detected
 
-INSTALL_MODE="auto"  # auto, parallel, sequential
+INSTALL_MODE="parallel"  # default; --sequential to opt out
 SAVE_LOCK=0
 
 # Parse options
@@ -34,7 +34,7 @@ while [ $# -gt 0 ]; do
     --parallel)   INSTALL_MODE="parallel"; shift ;;
     --sequential) INSTALL_MODE="sequential"; shift ;;
     --save-lock)  SAVE_LOCK=1; shift ;;
-    --auto)       INSTALL_MODE="auto"; shift ;;
+    --auto)       INSTALL_MODE="parallel"; shift ;;  # legacy alias
     *)            break ;;
   esac
 done
@@ -116,6 +116,41 @@ _install_one() {
 
 export -f _install_one
 
+# _parallel_entry ENTRIES — print the manifest line for GNU parallel, if any.
+_parallel_entry() {
+  printf '%s\n' "$1" | awk -F'|' '$1=="parallel"{print; exit}'
+}
+
+# _ensure_gnu_parallel ENTRIES — bootstrap GNU parallel into $BIN before batch install.
+_ensure_gnu_parallel() {
+  local entries=$1 entry
+  command -v parallel >/dev/null 2>&1 && return 0
+  entry="$(_parallel_entry "$entries")"
+  [ -n "$entry" ] || { warn "parallel not on PATH and no manifest entry"; return 1; }
+  log "Installing GNU parallel first (bootstrap for parallel installs)"
+  _install_one "$entry" || return 1
+  command -v parallel >/dev/null 2>&1 || return 1
+  # Silence the academic citation notice on every run (one-time per user; harmless if repeated).
+  parallel --citation </dev/null >/dev/null 2>&1 || true
+}
+
+# _run_parallel_batch BATCH — install manifest lines with GNU parallel or xargs -P.
+_run_parallel_batch() {
+  local batch=$1
+  if command -v parallel >/dev/null 2>&1; then
+    printf '%s\n' "$batch" | parallel -j "$PARALLEL_JOBS" --halt soon,fail=1 _install_one
+  elif command -v xargs >/dev/null 2>&1; then
+    warn "GNU parallel unavailable; using xargs -P"
+    printf '%s\n' "$batch" | xargs -P "$PARALLEL_JOBS" -I {} bash -c '_install_one "$@"' _ {}
+  else
+    warn "parallel and xargs unavailable; falling back to sequential"
+    while IFS= read -r entry; do
+      [ -z "$entry" ] && continue
+      _install_one "$entry" || return 1
+    done <<<"$batch"
+  fi
+}
+
 # --- main --------------------------------------------------------------------
 log "Installing tools from manifest: $MANIFEST"
 init_tools_dir
@@ -125,41 +160,12 @@ entries=$(parse_tool_entries "$MANIFEST")
 entry_count=$(echo "$entries" | wc -l)
 log "Found $entry_count tools to install"
 
-# Detect if parallel is available
-have_parallel() {
-  command -v parallel >/dev/null 2>&1 && return 0
-  command -v xargs >/dev/null 2>&1 && return 0
-  return 1
-}
-
-# Determine installation mode
-case "${INSTALL_MODE}" in
-  --parallel)
-    INSTALL_MODE="parallel"
-    ;;
-  --sequential)
-    INSTALL_MODE="sequential"
-    ;;
-  auto)
-    if [ "$entry_count" -gt 5 ] && have_parallel; then
-      INSTALL_MODE="parallel"
-    else
-      INSTALL_MODE="sequential"
-    fi
-    ;;
-esac
-
 # Execute installation
 case "$INSTALL_MODE" in
   parallel)
     log "Installing in parallel (${PARALLEL_JOBS} concurrent jobs)"
-    if command -v parallel >/dev/null 2>&1; then
-      # Use GNU parallel (most efficient); each job sources common.sh via _install_one.
-      printf '%s\n' "$entries" | parallel -j "$PARALLEL_JOBS" --halt soon,fail=1 _install_one
-    else
-      # Fall back to xargs
-      printf '%s\n' "$entries" | xargs -P "$PARALLEL_JOBS" -I {} bash -c '_install_one "$@"' _ {}
-    fi
+    _ensure_gnu_parallel "$entries" || true
+    _run_parallel_batch "$entries"
     ;;
   sequential)
     log "Installing sequentially"
@@ -169,7 +175,7 @@ case "$INSTALL_MODE" in
     done <<<"$entries"
     ;;
   *)
-    die "unknown install mode: $INSTALL_MODE (use: auto, parallel, sequential)"
+    die "unknown install mode: $INSTALL_MODE (use: parallel, sequential)"
     ;;
 esac
 

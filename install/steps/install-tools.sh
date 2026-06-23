@@ -11,7 +11,7 @@ MANIFEST="$SCRIPTS/../../config/tools.toml"
 
 # Try manifest-based installation first
 if [ -f "$MANIFEST" ] && [ -x "$BIN_DIR/install-from-manifest.sh" ]; then
-  bash "$BIN_DIR/install-from-manifest.sh"
+  bash "$BIN_DIR/install-from-manifest.sh" "$@"
 else
   # Fallback to legacy per-tool script installation for backward compatibility
   source "$INSTALL_DIR/common.sh"
