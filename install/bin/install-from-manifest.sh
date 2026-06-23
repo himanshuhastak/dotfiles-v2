@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # install/bin/install-from-manifest.sh — install tools from config/tools.toml manifest
 # Default: install GNU parallel first, then install remaining tools in parallel.
-# Usage: install-from-manifest.sh [--sequential] [--save-lock]
-#        PARALLEL_JOBS=N ./install-from-manifest.sh
+# Usage: install-from-manifest.sh [--sequential] [--with-optional] [--save-lock]
+#        PARALLEL_JOBS=N INSTALL_OPTIONAL=1 ./install-from-manifest.sh
 set -uo pipefail
 
 source "$(dirname "$0")/../common.sh"
@@ -26,32 +26,33 @@ PARALLEL_JOBS="${PARALLEL_JOBS:-$_detected}"
 unset _detected
 
 INSTALL_MODE="parallel"  # default; --sequential to opt out
+INSTALL_OPTIONAL="${INSTALL_OPTIONAL:-0}"
 SAVE_LOCK=0
 
 # Parse options
 while [ $# -gt 0 ]; do
   case "$1" in
-    --parallel)   INSTALL_MODE="parallel"; shift ;;
-    --sequential) INSTALL_MODE="sequential"; shift ;;
-    --save-lock)  SAVE_LOCK=1; shift ;;
-    --auto)       INSTALL_MODE="parallel"; shift ;;  # legacy alias
-    *)            break ;;
+    --parallel)       INSTALL_MODE="parallel"; shift ;;
+    --sequential)     INSTALL_MODE="sequential"; shift ;;
+    --with-optional)  INSTALL_OPTIONAL=1; shift ;;
+    --save-lock)      SAVE_LOCK=1; shift ;;
+    --auto)           INSTALL_MODE="parallel"; shift ;;  # legacy alias
+    *)                break ;;
   esac
 done
 
 # --- TOML parsing (simple sed/awk-based, no external dependencies) -----------
 # parse_tool_entries TOML_FILE — extract tool install blocks
-# Output: name|repo|archive_pattern|binname|install_method per tool
+# Output: name|repo|archive_pattern|binname|install_method|optional|path_hint
 parse_tool_entries() {
   local toml=$1
   [ -r "$toml" ] || return 1
   
-  # Use gsub() instead of match() 3-arg form: portable across BSD awk (macOS)
-  # and GNU awk. gsub strips everything before/after the quoted value.
   awk '
     /^\[\[tool\]\]/ {
-      if (name != "") print name "|" repo "|" archive_pattern "|" binname "|" install_method
-      name = repo = archive_pattern = binname = install_method = ""
+      if (name != "") print name "|" repo "|" archive_pattern "|" binname "|" install_method "|" optional "|" path_hint
+      name = repo = archive_pattern = binname = install_method = path_hint = ""
+      optional = "0"
       next
     }
     /^name[[:space:]]*=/ {
@@ -69,25 +70,31 @@ parse_tool_entries() {
     /^install_method[[:space:]]*=/ {
       v = $0; gsub(/^[^"]*"/, "", v); gsub(/".*/, "", v); install_method = v
     }
+    /^path_hint[[:space:]]*=/ {
+      v = $0; gsub(/^[^"]*"/, "", v); gsub(/".*/, "", v); path_hint = v
+    }
+    /^optional[[:space:]]*=/ {
+      if ($0 ~ /true/) optional = "1"
+    }
     END {
-      if (name != "") print name "|" repo "|" archive_pattern "|" binname "|" install_method
+      if (name != "") print name "|" repo "|" archive_pattern "|" binname "|" install_method "|" optional "|" path_hint
     }
   ' "$toml"
 }
 
 # _install_one ENTRY — install a single manifest entry (safe for parallel workers).
 # Each worker sources common.sh so helpers (skip, detect_arch, …) are available.
-# Entry format: "name|repo|archive_pattern|binname|install_method"
+# Entry format: "name|repo|archive_pattern|binname|install_method|optional|path_hint"
 _install_one() {
   local entry=$1
-  local name repo archive_pattern binname install_method script
+  local name repo archive_pattern binname install_method optional path_hint script
   local common="${DOTFILES}/install/common.sh"
   local tools="${DOTFILES}/install/tools"
 
-  IFS='|' read -r name repo archive_pattern binname install_method <<<"$entry"
+  IFS='|' read -r name repo archive_pattern binname install_method optional path_hint <<<"$entry"
   [ -z "$repo" ] && return 0
 
-  # Non-GitHub-release installs delegate to per-tool scripts (source, pip, git-clone, …).
+  # Non-GitHub-release installs delegate to per-tool scripts (source, pip, script, …).
   if [ -n "$install_method" ] && [ "$install_method" != "github" ]; then
     script="$tools/${name}.sh"
     if [ -f "$script" ]; then
@@ -111,26 +118,19 @@ _install_one() {
   # shellcheck disable=SC1090
   source "$common"
   init_tools_dir
-  install_tool "$name" "$repo" "$archive_pattern" "${binname:-$name}"
+  install_tool "$name" "$repo" "$archive_pattern" "${binname:-$name}" "${path_hint:-}"
 }
 
 export -f _install_one
 
-# _parallel_entry ENTRIES — print the manifest line for GNU parallel, if any.
-_parallel_entry() {
-  printf '%s\n' "$1" | awk -F'|' '$1=="parallel"{print; exit}'
-}
-
-# _ensure_gnu_parallel ENTRIES — bootstrap GNU parallel into $BIN before batch install.
+# _ensure_gnu_parallel — bootstrap GNU parallel into $BIN before batch install.
 _ensure_gnu_parallel() {
-  local entries=$1 entry
+  local script="${DOTFILES}/install/tools/parallel.sh"
   command -v parallel >/dev/null 2>&1 && return 0
-  entry="$(_parallel_entry "$entries")"
-  [ -n "$entry" ] || { warn "parallel not on PATH and no manifest entry"; return 1; }
+  [ -f "$script" ] || { warn "parallel bootstrap script missing ($script)"; return 1; }
   log "Installing GNU parallel first (bootstrap for parallel installs)"
-  _install_one "$entry" || return 1
+  bash "$script" || return 1
   command -v parallel >/dev/null 2>&1 || return 1
-  # Silence the academic citation notice on every run (one-time per user; harmless if repeated).
   parallel --citation </dev/null >/dev/null 2>&1 || true
 }
 
@@ -157,14 +157,20 @@ init_tools_dir
 
 # Parse manifest
 entries=$(parse_tool_entries "$MANIFEST")
-entry_count=$(echo "$entries" | wc -l)
+if [ "$INSTALL_OPTIONAL" != "1" ]; then
+  optional_skipped=$(printf '%s\n' "$entries" | awk -F'|' '$6=="1"{c++} END{print c+0}')
+  entries=$(printf '%s\n' "$entries" | awk -F'|' '$6!="1"{print}')
+  [ "${optional_skipped:-0}" -gt 0 ] && \
+    log "Skipping $optional_skipped optional tool(s) (bash, ble.sh, rust, task, timew, …); use --with-optional to include"
+fi
+entry_count=$(printf '%s\n' "$entries" | grep -c . || true)
 log "Found $entry_count tools to install"
 
 # Execute installation
 case "$INSTALL_MODE" in
   parallel)
     log "Installing in parallel (${PARALLEL_JOBS} concurrent jobs)"
-    _ensure_gnu_parallel "$entries" || true
+    _ensure_gnu_parallel || true
     _run_parallel_batch "$entries"
     ;;
   sequential)

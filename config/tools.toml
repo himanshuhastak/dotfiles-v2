@@ -45,7 +45,8 @@ defer = true
 [[tool]]
 name = "broot"
 repo = "Canop/broot"
-archive_pattern = "broot-{arch}-unknown-linux-musl.zip"
+archive_pattern = "broot_{ver}.zip"
+path_hint = "{arch}-unknown-linux-musl"
 binname = "broot"
 description = "Tree navigator and launcher"
 category = "navigation"
@@ -75,7 +76,7 @@ aliases = [["cat", "bat --paging=never"], ["less", "bat"]]
 [[tool]]
 name = "choose"
 repo = "theryangeary/choose"
-archive_pattern = "choose-{ver}-{arch}-unknown-linux-musl.tar.gz"
+install_method = "script"
 description = "Column/field picker for piped text"
 category = "utilities"
 aliases = [["cut", "choose"]]
@@ -91,15 +92,15 @@ env_vars = [["GIT_PAGER", "delta"]]
 [[tool]]
 name = "duf"
 repo = "muesli/duf"
-archive_pattern = "duf_{ver}_linux_{goarch}.tar.gz"
+archive_pattern = "duf_{ver}_linux_{arch}.tar.gz"
 description = "Modern df replacement"
 category = "utilities"
 aliases = [["df", "duf"]]
 
 [[tool]]
 name = "dust"
-repo = "boopm/dust"
-archive_pattern = "dust-{arch}-unknown-linux-musl.tar.gz"
+repo = "bootandy/dust"
+archive_pattern = "dust-{tag}-{arch}-unknown-linux-musl.tar.gz"
 description = "Modern du (largest entries first)"
 category = "utilities"
 aliases = [["du", "dust -r"]]
@@ -107,7 +108,7 @@ aliases = [["du", "dust -r"]]
 [[tool]]
 name = "eza"
 repo = "eza-community/eza"
-archive_pattern = "eza_linux_{arch}.tar.gz"
+archive_pattern = "eza_{arch}-unknown-linux-musl.tar.gz"
 description = "Modern ls replacement"
 category = "utilities"
 aliases = [["ls", "eza --group-directories-first --icons=auto"], ["ll", "eza -lah --git --group-directories-first --icons=auto"], ["lt", "eza --tree --level=2 --icons=auto"], ["tree", "eza --tree --icons=auto"]]
@@ -115,7 +116,7 @@ aliases = [["ls", "eza --group-directories-first --icons=auto"], ["ll", "eza -la
 [[tool]]
 name = "fd"
 repo = "sharkdp/fd"
-archive_pattern = "fd-{ver}-{arch}-unknown-linux-musl.tar.gz"
+archive_pattern = "fd-{tag}-{arch}-unknown-linux-musl.tar.gz"
 binname = "fd"
 description = "Friendlier find"
 category = "utilities"
@@ -124,7 +125,7 @@ aliases = [["find", "fd"], ["fdh", "fd --hidden --no-ignore"]]
 [[tool]]
 name = "gdu"
 repo = "dundee/gdu"
-archive_pattern = "gdu_linux_{arch}_single.tar.gz"
+install_method = "script"
 description = "NCDu-style disk usage"
 category = "utilities"
 aliases = [["ncdu", "gdu"]]
@@ -148,8 +149,8 @@ aliases = [["lg", "lazygit"]]
 
 [[tool]]
 name = "oc-rsync"
-repo = "opensourcecherishers/rsync"
-archive_pattern = "oc-rsync-{arch}-unknown-linux-musl.tar.gz"
+repo = "oferchen/rsync"
+archive_pattern = "oc-rsync-{ver}-linux-{arch}-musl.tar.gz"
 binname = "oc-rsync"
 description = "Rust rsync (wire-compatible with rsync 3.4.1)"
 category = "utilities"
@@ -159,7 +160,7 @@ optional = true
 [[tool]]
 name = "procs"
 repo = "dalance/procs"
-archive_pattern = "procs-{ver}-{arch}-unknown-linux-musl.tar.gz"
+archive_pattern = "procs-{tag}-{arch}-linux.zip"
 binname = "procs"
 description = "Modern ps replacement"
 category = "utilities"
@@ -177,7 +178,7 @@ aliases = [["grep", "rg --smart-case"], ["rgi", "rg -i"]]
 [[tool]]
 name = "sd"
 repo = "chmln/sd"
-archive_pattern = "sd-{arch}-unknown-linux-musl"
+archive_pattern = "sd-{tag}-{arch}-unknown-linux-musl.tar.gz"
 binname = "sd"
 description = "Modern sed"
 category = "utilities"
@@ -336,11 +337,19 @@ optional = true
 script_url = "https://sh.rustup.rs"
 
 [[tool]]
+name = "bash"
+repo = "gnu/bash"
+description = "Latest GNU bash (optional upgrade over system bash 4.x)"
+category = "shells"
+install_method = "script"
+optional = true
+
+[[tool]]
 name = "blesh"
 repo = "akinomyoga/ble.sh"
-description = "Bash line editing library"
+description = "Bash line editing library (ble.sh)"
 category = "shell-enhancement"
-install_method = "git-clone"
+install_method = "script"
 optional = true
 
 [[tool]]
@@ -354,10 +363,9 @@ optional = true
 [[tool]]
 name = "zsh"
 repo = "zsh-users/zsh"
-description = "Zsh shell"
+description = "Zsh shell (required — this framework's interactive shell)"
 category = "shells"
 install_method = "source"
-optional = true
 
 # ── New additions: gap-filling modern tools ──────────────────────────────────
 # Commented out (rename [[tool.disabled]] → [[tool]] to enable each one).

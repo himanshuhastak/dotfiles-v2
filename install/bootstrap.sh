@@ -18,6 +18,7 @@ for arg in "$@"; do
     --fetch-theme)       THEME_ARGS+=(--force) ;;
     --sequential-tools)  TOOL_ARGS+=(--sequential) ;;
     --parallel-tools)    TOOL_ARGS+=(--parallel) ;;
+    --with-optional-tools) TOOL_ARGS+=(--with-optional) ;;
     *) warn "unknown arg: $arg" ;;
   esac
 done

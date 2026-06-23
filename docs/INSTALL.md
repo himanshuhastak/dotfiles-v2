@@ -17,11 +17,10 @@ Steps (see `install/steps/`):
 
 1. **install-stow** — builds the bundled stow (python, no Perl) into `install/bin`.
 2. **fetch-themes** — Catppuccin Mocha assets (starship, bat, delta).
-3. **install-tools** — installs ~30 CLIs into `var/tools/bin` (GNU parallel first,
-   then the rest in parallel; pass `--sequential-tools` to `install.sh` to opt out),
-   quality tools `shellcheck`, `shfmt`, `bats`, `zshellcheck` (zsh linter),
-   `betterleaks` (secrets), `actionlint`, `editorconfig-checker`. Self-owned;
-   never reuses system/NFS binaries.
+3. **install-tools** — installs core CLIs into `var/tools/bin` in parallel. **Required:**
+   `zsh` (built from source). **Skipped by default** (use `--with-optional-tools`):
+   latest `bash`, `ble.sh`, `rust`, `task`, `timew`, `bugwarrior`, and other
+   `optional = true` entries in `config/tools.toml`.
 4. **install-zellij-plugins** — downloads `zsm`, `zjframes`, `monocle`
    into `var/vendor/zellij-plugins/` and symlinks them into the zellij stow package.
 5. **stow-dotfiles** — symlinks the `config/stow/*` packages into `$HOME`
@@ -30,7 +29,7 @@ Steps (see `install/steps/`):
 7. **install-fonts** — JetBrainsMono Nerd Font.
 8. **fix-task-hooks**, then **compile** (`.zwc`) and **doc man**.
 
-Flags: `--skip-tools`, `--skip-fonts`, `--fetch-theme`, `--sequential-tools`.
+Flags: `--skip-tools`, `--skip-fonts`, `--fetch-theme`, `--sequential-tools`, `--with-optional-tools`.
 
 ## After install
 
