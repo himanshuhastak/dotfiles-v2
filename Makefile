@@ -4,7 +4,7 @@ BIN      := $(DOTFILES)/bin/dotfiles
 
 .DEFAULT_GOAL := help
 
-.PHONY: help install stow compile check audit fmt test bench doctor man clean reset hardreset
+.PHONY: help install stow compile check audit fmt test bench doctor man clean reset hardreset fix-exec
 
 help: ## Show this help
 	@awk 'BEGIN{FS=":.*##"} /^[a-zA-Z_-]+:.*##/{printf "  \033[1;32m%-10s\033[0m %s\n",$$1,$$2}' $(MAKEFILE_LIST)
@@ -43,6 +43,9 @@ bench: ## Benchmark interactive zsh startup
 
 doctor: ## Health checks
 	@$(BIN) doctor
+
+fix-exec: ## Mark all shebang scripts +x in git and on disk (stops 755↔644 churn)
+	@bash $(DOTFILES)/install/bin/fix-executable-bits.sh
 
 man: ## Regenerate man/dotfiles.1 from the CLI help
 	@$(BIN) doc man
