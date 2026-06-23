@@ -1,11 +1,10 @@
-# Catppuccin Mocha — simplified layout, original OS symbol map.
+# Catppuccin Mocha — minimal prompt (no OS, ASCII-friendly symbols).
 "$schema" = 'https://starship.rs/config-schema.json'
 
 scan_timeout = 10000
 command_timeout = 1000
 
 format = """
-$os\
 $hostname\
 $directory\
 $git_branch\
@@ -30,31 +29,7 @@ $character"""
 palette = "catppuccin_mocha"
 
 [os]
-disabled = false
-style = "red"
-format = "[$symbol]($style)"
-
-[os.symbols]
-Windows = ""
-Ubuntu = "󰕈"
-SUSE = ""
-Raspbian = "󰐿"
-Mint = "󰣭"
-Macos = "󰀵"
-Manjaro = ""
-Linux = "󰌽"
-Gentoo = "󰣨"
-Fedora = "󰣛"
-Alpine = ""
-Amazon = ""
-Android = ""
-AOSC = ""
-Arch = "󰣇"
-Artix = "󰣇"
-CentOS = ""
-Debian = "󰣚"
-Redhat = "󱄛"
-RedHatEnterprise = "󱄛"
+disabled = true
 
 [hostname]
 ssh_only = false
@@ -67,114 +42,114 @@ style = "bold text"
 format = " [$path]($style)"
 truncation_length = 0
 truncate_to_repo = false
-read_only = " 🔒"
+read_only = " ro"
 
 [directory.substitutions]
-"Documents" = "󰈙 "
-"Downloads" = " "
-"Music" = "󰝚 "
-"Pictures" = " "
-"Developer" = "󰲋 "
+"Documents" = "docs/"
+"Downloads" = "dl/"
+"Music" = "music/"
+"Pictures" = "pics/"
+"Developer" = "dev/"
 
 [git_branch]
-symbol = ""
+symbol = ""
 style = "mauve"
-format = " [$symbol $branch]($style)"
+format = " [$branch]($style)"
 
 [git_status]
 style = "subtext0"
 format = "[$all_status$ahead_behind]($style)"
-use_git_executable = true   # optional: match `git status` exactly on odd setups
+use_git_executable = true
 untracked = "?${count}"
 modified = "!${count}"
 staged = "+${count}"
-deleted = "✘${count}"
-renamed = "»${count}"
-stashed = '\$'
-ahead = "⇡${count}"
-behind = "⇣${count}"
-diverged = "⇕⇡${ahead_count}⇣${behind_count}"
+deleted = "x${count}"
+renamed = ">${count}"
+stashed = '$'
+ahead = "^${count}"
+behind = "v${count}"
+diverged = "^${ahead_count}v${behind_count}"
 
 [time]
 disabled = false
 time_format = "%R"
 style = "overlay0"
-format = " [ $time]($style)"
+format = " [$time]($style)"
 
 [c]
-symbol = ""
+symbol = "c"
 style = "subtext0"
 format = " [$symbol$version]($style)"
 
 [rust]
-symbol = ""
+symbol = "rs"
 style = "subtext0"
 format = " [$symbol$version]($style)"
 
 [golang]
-symbol = ""
+symbol = "go"
 style = "subtext0"
 format = " [$symbol$version]($style)"
 
 [nodejs]
-symbol = ""
+symbol = "node"
 style = "subtext0"
 format = " [$symbol$version]($style)"
 
 [bun]
-symbol = ""
+symbol = "bun"
 style = "subtext0"
 format = " [$symbol$version]($style)"
 
 [php]
-symbol = ""
+symbol = "php"
 style = "subtext0"
 format = " [$symbol$version]($style)"
 
 [java]
-symbol = ""
+symbol = "java"
 style = "subtext0"
 format = " [$symbol$version]($style)"
 
 [kotlin]
-symbol = ""
+symbol = "kt"
 style = "subtext0"
 format = " [$symbol$version]($style)"
 
 [haskell]
-symbol = ""
+symbol = "hs"
 style = "subtext0"
 format = " [$symbol$version]($style)"
 
 [python]
-symbol = ""
+symbol = "py"
 style = "subtext0"
 format = " [$symbol$version]($style)"
 
 [docker_context]
-symbol = ""
+symbol = "docker"
 style = "subtext0"
-format = " [$symbol$context]($style)"
+format = " [$symbol $context]($style)"
 
 [conda]
-symbol = " "
+symbol = ""
 style = "subtext0"
-format = "[$symbol$environment]($style)"
+format = "[$environment]($style)"
 ignore_base = true
 
 [cmd_duration]
 disabled = false
 min_time = 3_000
 style = "overlay0"
-format = " ·  [$duration]($style)"
+format = " [$duration]($style)"
 
 [line_break]
 disabled = true
 
 [character]
-success_symbol = "[❯](peach)"
-error_symbol = "[❯](red)"
-vimcmd_symbol = "[❮](subtext1)"
+success_symbol = "[>](peach)"
+error_symbol = "[>](red)"
+vimcmd_symbol = "[<](subtext1)"
 
 [username]
 disabled = true
