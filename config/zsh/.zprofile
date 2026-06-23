@@ -5,6 +5,12 @@
 (( ${+commands[dotfiles]} )) && dotfiles stow --if-needed >/dev/null 2>&1
 (( ${+commands[dotfiles]} )) && dotfiles work-stow --if-needed >/dev/null 2>&1
 
+# SSH X11 forwarding — merge xauth cookies when DISPLAY is forwarded.
+if [[ -n ${DISPLAY:-} && -r $DOTFILES_DIR/config/shell/lib/x11-forwarding.sh ]]; then
+  source "$DOTFILES_DIR/config/shell/lib/x11-forwarding.sh"
+  apply_x11_forwarding_fix 2>/dev/null || true
+fi
+
 # Personal login setup (cluster modules, login-only exports).
 _load_profile login
 

@@ -124,7 +124,9 @@ cmd_enable() {
 
 cmd_reload() {
   command -v dotfiles >/dev/null 2>&1 && dotfiles compile >/dev/null 2>&1 || true
-  exec "${SHELL:-zsh}" -l
+  local zsh_bin="$DOTFILES_DIR/var/tools/bin/zsh"
+  [ -x "$zsh_bin" ] || zsh_bin="${SHELL:-$(command -v zsh 2>/dev/null || echo zsh)}"
+  exec "$zsh_bin" -l
 }
 
 cmd_compile() {
@@ -216,6 +218,16 @@ cmd_doctor() {
   for t in zsh starship sheldon fzf atuin zoxide eza bat rg fd; do
     chk "$t on PATH" "command -v $t"
   done
+  if [ -x "$DOTFILES_DIR/var/tools/bin/zsh" ]; then
+    chk "self-built zsh installed" "[ -x '$DOTFILES_DIR/var/tools/bin/zsh' ]"
+    printf '  %s·%s %s (use dotfiles reload or exec %s/var/tools/bin/zsh -l)\n' \
+      "$c_b" "$c_r" \
+      "$("$DOTFILES_DIR/var/tools/bin/zsh" --version 2>/dev/null | head -1)" \
+      "$DOTFILES_DIR"
+  else
+    printf '  %s✘%s self-built zsh missing — run: make install\n' "$c_off" "$c_r"
+    bad=$((bad+1))
+  fi
 
   printf '%sstow symlinks%s\n' "$c_b" "$c_r"
   if needs_stow; then

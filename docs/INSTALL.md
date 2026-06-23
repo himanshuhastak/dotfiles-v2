@@ -27,14 +27,17 @@ Steps (see `install/steps/`):
    (notably `~/.zshenv`, the ZDOTDIR bootstrap).
 6. **install-sheldon-plugins** — clones zsh plugins + `zsh-defer` into `var/vendor`.
 7. **install-fonts** — JetBrainsMono Nerd Font.
-8. **fix-task-hooks**, then **compile** (`.zwc`) and **doc man**.
+8. **fix-ssh** — `~/.ssh` permissions + ensure local `.pub` keys are in `authorized_keys`.
+9. **fix-x11-forwarding** — XAUTH patch when `DISPLAY` is set (also on each zsh login).
+10. **fix-task-hooks**, then **compile** (`.zwc`) and **doc man**.
 
 Flags: `--skip-tools`, `--skip-fonts`, `--fetch-theme`, `--sequential-tools`, `--with-optional-tools`.
 
 ## After install
 
 ```sh
-exec zsh
+exec zsh          # re-execs to var/tools/bin/zsh when installed
+dotfiles reload     # recompile + re-exec self-built zsh
 dotfiles doctor      # verify paths, tools, symlinks
 man dotfiles         # full CLI reference
 dotfiles bench       # measure startup time

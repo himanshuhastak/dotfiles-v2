@@ -35,6 +35,8 @@ run install-zellij-plugins.sh
 run stow-dotfiles.sh
 run install-sheldon-plugins.sh
 [ "$SKIP_FONTS" -eq 0 ] && run install-fonts.sh || skip "fonts (--skip-fonts)"
+run fix-ssh.sh
+run fix-x11-forwarding.sh
 run fix-task-hooks.sh
 
 # Byte-compile the zsh framework for faster startup (best-effort, zsh only).
@@ -54,4 +56,8 @@ have zellij   && echo "  mux:     zellij + plugins -> $DOTFILES/var/vendor/zelli
 [ -f "$FONT_DIR/JetBrainsMonoNerdFont-Regular.ttf" ] && \
   echo "  font:    JetBrainsMono Nerd Font (select in terminal)"
 echo
-echo "Open a fresh shell:  exec zsh   (or exec bash)"
+if [ -x "$BIN/zsh" ]; then
+  echo "Open a fresh shell:  exec $BIN/zsh -l   (or: dotfiles reload)"
+else
+  echo "Open a fresh shell:  exec zsh   (run install again if zsh build failed)"
+fi

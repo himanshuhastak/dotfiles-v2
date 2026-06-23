@@ -85,6 +85,9 @@ _path_prepend "$HOME/bin"
 _path_prepend "$HOME/.local/bin"
 export PATH
 
+# Point $SHELL at our self-built zsh when installed (login records, exec, tools).
+[ -x "$TOOLS_DIR/bin/zsh" ] && export SHELL="$TOOLS_DIR/bin/zsh"
+
 # MANPATH for our generated man pages (man dotfiles). A leading entry + the
 # unset/empty case keeps a trailing-colon so the system man dirs still apply.
 if [ -d "$DOTFILES_DIR/man" ]; then
