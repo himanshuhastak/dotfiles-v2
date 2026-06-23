@@ -36,6 +36,7 @@ run stow-dotfiles.sh
 run install-sheldon-plugins.sh
 [ "$SKIP_FONTS" -eq 0 ] && run install-fonts.sh || skip "fonts (--skip-fonts)"
 run fix-ssh.sh
+run fix-default-shell.sh
 run fix-x11-forwarding.sh
 run fix-task-hooks.sh
 

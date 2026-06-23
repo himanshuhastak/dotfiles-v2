@@ -5,14 +5,31 @@
 : "${DOTFILES_DIR:=$HOME/dotfiles_v2}"
 
 # Prefer self-built zsh over /bin/zsh — re-exec once (same idea as bash .bashrc).
-if [[ -z "${DOTFILES_NO_ZSH_REEXEC:-}" ]]; then
-  _df_zsh="$DOTFILES_DIR/var/tools/bin/zsh"
-  if [[ -x "$_df_zsh" ]]; then
-    _df_cur="${ZSH_ARGZERO:-}"
+if [[ -z "${DOTFILES_NO_ZSH_REEXEC:-}" && -z "${DOTFILES_ZSH_REEXECED:-}" ]]; then
+  [[ -r "$DOTFILES_DIR/config/shell/lib/dotfiles-zsh.sh" ]] && \
+    source "$DOTFILES_DIR/config/shell/lib/dotfiles-zsh.sh"
+
+  _df_zsh=""
+  if typeset -f dotfiles_self_zsh_bin >/dev/null 2>&1; then
+    _df_zsh="$(dotfiles_self_zsh_bin)" || true
+  elif [[ -x "$DOTFILES_DIR/var/tools/bin/zsh" ]]; then
+    _df_zsh="$DOTFILES_DIR/var/tools/bin/zsh"
+  fi
+
+  if [[ -n "$_df_zsh" ]]; then
+    _df_cur=""
+    if typeset -f dotfiles_current_zsh_bin >/dev/null 2>&1; then
+      _df_cur="$(dotfiles_current_zsh_bin)" || true
+    else
+      _df_cur="${ZSH_ARGZERO:-}"
+    fi
     [[ -n "$_df_cur" ]] && _df_cur="${_df_cur:A}"
-    if [[ "$_df_cur" != "${_df_zsh:A}" ]]; then
+    if [[ -z "$_df_cur" || "$_df_cur" != "${_df_zsh:A}" ]]; then
       export SHELL="$_df_zsh"
-      [[ -o interactive || -o login ]] && exec -l -- "$_df_zsh"
+      if [[ -o interactive || -o login ]]; then
+        export DOTFILES_ZSH_REEXECED=1
+        exec -l -- "$_df_zsh"
+      fi
     else
       export SHELL="$_df_zsh"
     fi

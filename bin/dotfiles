@@ -220,6 +220,19 @@ cmd_doctor() {
   done
   if [ -x "$DOTFILES_DIR/var/tools/bin/zsh" ]; then
     chk "self-built zsh installed" "[ -x '$DOTFILES_DIR/var/tools/bin/zsh' ]"
+    local path_zsh resolved want
+    path_zsh="$(command -v zsh 2>/dev/null || true)"
+    want="$(readlink -f "$DOTFILES_DIR/var/tools/bin/zsh" 2>/dev/null || echo "$DOTFILES_DIR/var/tools/bin/zsh")"
+    if [ -n "$path_zsh" ]; then
+      resolved="$(readlink -f "$path_zsh" 2>/dev/null || echo "$path_zsh")"
+      if [ "$resolved" = "$want" ]; then
+        chk "zsh on PATH is self-built" true
+      else
+        printf '  %s✘%s zsh on PATH is %s (want %s) — dotfiles reload\n' \
+          "$c_off" "$c_r" "$resolved" "$want"
+        bad=$((bad+1))
+      fi
+    fi
     printf '  %s·%s %s (use dotfiles reload or exec %s/var/tools/bin/zsh -l)\n' \
       "$c_b" "$c_r" \
       "$("$DOTFILES_DIR/var/tools/bin/zsh" --version 2>/dev/null | head -1)" \

@@ -11,30 +11,56 @@ case $- in *i*) ;; *) return ;; esac
 
 # Locate the repo from this stowed file (works at any clone path).
 _dfself="$(readlink -f "${BASH_SOURCE[0]}" 2>/dev/null || echo "${BASH_SOURCE[0]}")"
-_dfroot="$(cd "$(dirname "$_dfself")/../../.." && pwd)"
-. "$_dfroot/config/shell/resolve-dotfiles-dir.sh" "$_dfself"
+_df_resolve="$(cd "$(dirname "$_dfself")/../../../config/shell" 2>/dev/null && pwd)/resolve-dotfiles-dir.sh"
 
-# Prefer self-installed zsh; fall back to system zsh.
-_zsh="$DOTFILES_DIR/var/tools/bin/zsh"
-[ -x "$_zsh" ] || _zsh="$(command -v zsh 2>/dev/null || true)"
-[ -x "$_zsh" ] || _zsh=/usr/bin/zsh
-if [ ! -x "$_zsh" ]; then
+DOTFILES_DIR=
+# shellcheck disable=SC1090
+[ -r "$_df_resolve" ] && . "$_df_resolve" "$_dfself"
+# Fallback: ~/.zshenv stow symlink (when bashrc path resolution fails).
+if [ ! -x "${DOTFILES_DIR:-}/var/tools/bin/zsh" ]; then
+  DOTFILES_DIR=
+  # shellcheck disable=SC1090
+  [ -r "$_df_resolve" ] && . "$_df_resolve" "$HOME/.zshenv"
+fi
+
+# shellcheck disable=SC1090
+[ -r "${DOTFILES_DIR:-}/config/shell/lib/dotfiles-zsh.sh" ] && \
+  . "${DOTFILES_DIR}/config/shell/lib/dotfiles-zsh.sh"
+
+_df_zsh=""
+if type dotfiles_self_zsh_bin >/dev/null 2>&1; then
+  _df_zsh="$(dotfiles_self_zsh_bin)" || true
+fi
+if [ -z "$_df_zsh" ] && [ -x "${DOTFILES_DIR:-}/var/tools/bin/zsh" ]; then
+  _df_zsh="$DOTFILES_DIR/var/tools/bin/zsh"
+fi
+if [ -z "$_df_zsh" ]; then
+  _df_zsh="$(command -v zsh 2>/dev/null || true)"
+  [ -x "$_df_zsh" ] || _df_zsh=/usr/bin/zsh
+  if [ -n "${DOTFILES_DIR:-}" ] && [ -x "$DOTFILES_DIR/var/tools/bin/zsh" ]; then
+    printf 'dotfiles: using system zsh (%s); self-built exists at %s/var/tools/bin/zsh — check DOTFILES_DIR\n' \
+      "$_df_zsh" "$DOTFILES_DIR" >&2
+  fi
+fi
+
+if [ ! -x "$_df_zsh" ]; then
   printf '%s\n' 'dotfiles: zsh not found (install tools: ./install.sh)' >&2
-  unset _dfself _dfroot _zsh
+  unset _dfself _df_resolve _df_zsh
   return 1
 fi
 
-# Fresh zsh login: drop bash/inherited env; ~/.zshenv bootstrap rebuilds everything.
+# Fresh zsh login: drop bash/inherited env; pass DOTFILES_DIR so ~/.zshenv finds the repo.
 _user="${USER:-$(id -un)}"
 _env=( -i
   "HOME=$HOME"
   "USER=$_user"
   "LOGNAME=${LOGNAME:-$_user}"
   "TERM=${TERM:-xterm-256color}"
-  "SHELL=$_zsh"
+  "SHELL=$_df_zsh"
+  "DOTFILES_DIR=${DOTFILES_DIR:-}"
 )
 [[ -n "${LANG:-}" ]]   && _env+=( "LANG=$LANG" )
 [[ -n "${LC_ALL:-}" ]] && _env+=( "LC_ALL=$LC_ALL" )
 
-unset _dfself _dfroot _user
-exec env "${_env[@]}" "$_zsh" -l
+unset _dfself _df_resolve _user
+exec env "${_env[@]}" "$_df_zsh" -l
