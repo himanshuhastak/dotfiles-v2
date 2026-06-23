@@ -1,17 +1,30 @@
 #!/usr/bin/env bash
-# Stow ~/Work/* — reads path:shortname lines from ~/bin/gfs/mount.lst.
+# Stow ~/Work/* — reads path:shortname lines from $DOTFILES_LOCAL/profile/mount.lst.
 set -euo pipefail
 source "$(dirname "$0")/../common.sh"
 
 LOCAL_DIR="${DOTFILES_LOCAL:-$DOTFILES/local}"
-WORK_STOW_DIR="$LOCAL_DIR/work"
+WORK_STOW_DIR="$DOTFILES/var/work"
 WORK_PKG="$WORK_STOW_DIR/mounts"
 WORK_TARGET="${DOTFILES_WORK_TARGET:-$HOME/Work}"
-GFS_DIR="${DOTFILES_GFS_DIR:-$HOME/bin/gfs}"
-MOUNT_LST="$GFS_DIR/mount.lst"
 
-[ -x "$STOW" ] || { warn "run install/steps/install-stow.sh first"; exit 1; }
-[ -r "$MOUNT_LST" ] || die "work-stow: missing $MOUNT_LST (see local/gfs.example/mount.lst.example)"
+# Canonical: local/profile/mount.lst (same tree as secrets.sh, company.sh, …).
+_resolve_mount_lst() {
+  local base="${1:-$LOCAL_DIR}" f
+  for f in "$base/profile/mount.lst" "$base/mount.lst"; do
+    if [ -r "$f" ]; then
+      [ "$f" = "$base/profile/mount.lst" ] || warn "work-stow: using legacy $f (prefer local/profile/mount.lst)"
+      printf '%s\n' "$f"
+      return 0
+    fi
+  done
+  return 1
+}
+
+MOUNT_LST="$(_resolve_mount_lst)" || {
+  warn "work-stow: no local/profile/mount.lst (path:shortname lines; see docs/INSTALL.md)"
+  exit 0
+}
 
 _rel_link() {
   python3 -c 'import os,sys; print(os.path.relpath(sys.argv[1], sys.argv[2]))' "$1" "$2"

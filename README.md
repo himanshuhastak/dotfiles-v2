@@ -12,8 +12,8 @@ loaded for an instant prompt.
   so the repo can live anywhere.
 - **Async startup** — heavy tool hooks load after the first prompt via
   [zsh-defer](https://github.com/romkatv/zsh-defer); `starship` stays synchronous.
-- **Modular** — numbered drop-ins under `config/shell/{core,zsh,conf.d}` and semantic
-  `local/profile/*.sh`, each toggleable with `dotfiles disable <name>`.
+- **Modular** — numbered drop-ins under `config/shell/{core,zsh,conf.d}` and
+  `local/profile/*.sh` (secrets, aliases, company), each toggleable with `dotfiles disable <name>`.
 - **Self-owned tools** — ~30 CLIs installed into `var/tools` (never reuses
   system/NFS binaries); zsh plugins vendored into `var/vendor`.
 - **`var/` is the only generated tree** — wipe it for a clean reinstall.
@@ -64,8 +64,7 @@ This repository is [MIT licensed](LICENSE). Copyright (c) 2026 Himanshu Hastak.
 
 It is personal shell configuration, shared publicly so friends can fork and
 adapt it. Paths, usernames, and machine-specific settings are examples — replace
-them with your own. Do not commit secrets; copy `local/profile.example/` templates to
-`local/profile/*.sh` (your copies are gitignored).
+them with your own. Do not commit secrets; add `local/profile/*.sh` as needed (gitignored).
 
 **Third-party code** is not covered by this MIT license and remains under its
 original terms:

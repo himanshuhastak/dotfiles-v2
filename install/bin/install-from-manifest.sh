@@ -6,6 +6,7 @@
 set -uo pipefail
 
 source "$(dirname "$0")/../common.sh"
+export DOTFILES
 
 MANIFEST="${DOTFILES}/config/tools.toml"
 LOCK_FILE="${DOTFILES}/config/tools.lock"
@@ -40,7 +41,7 @@ done
 
 # --- TOML parsing (simple sed/awk-based, no external dependencies) -----------
 # parse_tool_entries TOML_FILE — extract tool install blocks
-# Output: lines like "name:repo:archive_pattern:binname" for each tool
+# Output: name|repo|archive_pattern|binname|install_method per tool
 parse_tool_entries() {
   local toml=$1
   [ -r "$toml" ] || return 1
@@ -49,8 +50,8 @@ parse_tool_entries() {
   # and GNU awk. gsub strips everything before/after the quoted value.
   awk '
     /^\[\[tool\]\]/ {
-      if (name != "") print name "|" repo "|" archive_pattern "|" binname
-      name = repo = archive_pattern = binname = ""
+      if (name != "") print name "|" repo "|" archive_pattern "|" binname "|" install_method
+      name = repo = archive_pattern = binname = install_method = ""
       next
     }
     /^name[[:space:]]*=/ {
@@ -65,30 +66,55 @@ parse_tool_entries() {
     /^binname[[:space:]]*=/ {
       v = $0; gsub(/^[^"]*"/, "", v); gsub(/".*/, "", v); binname = v
     }
+    /^install_method[[:space:]]*=/ {
+      v = $0; gsub(/^[^"]*"/, "", v); gsub(/".*/, "", v); install_method = v
+    }
     END {
-      if (name != "") print name "|" repo "|" archive_pattern "|" binname
+      if (name != "") print name "|" repo "|" archive_pattern "|" binname "|" install_method
     }
   ' "$toml"
 }
 
-# install_tool_from_entry ENTRY — extract fields and call install_tool
-# Entry format: "name|repo|archive_pattern|binname"
-install_tool_from_entry() {
+# _install_one ENTRY — install a single manifest entry (safe for parallel workers).
+# Each worker sources common.sh so helpers (skip, detect_arch, …) are available.
+# Entry format: "name|repo|archive_pattern|binname|install_method"
+_install_one() {
   local entry=$1
-  local name repo archive_pattern binname
-  
-  IFS='|' read -r name repo archive_pattern binname <<<"$entry"
-  
-  # Skip tools without repos (source installs, etc.)
-  if [ -z "$repo" ]; then
+  local name repo archive_pattern binname install_method script
+  local common="${DOTFILES}/install/common.sh"
+  local tools="${DOTFILES}/install/tools"
+
+  IFS='|' read -r name repo archive_pattern binname install_method <<<"$entry"
+  [ -z "$repo" ] && return 0
+
+  # Non-GitHub-release installs delegate to per-tool scripts (source, pip, git-clone, …).
+  if [ -n "$install_method" ] && [ "$install_method" != "github" ]; then
+    script="$tools/${name}.sh"
+    if [ -f "$script" ]; then
+      bash "$script" || return 1
+    else
+      # shellcheck disable=SC1090
+      source "$common"
+      warn "$name: install_method=$install_method but no installer at $script"
+      return 1
+    fi
     return 0
   fi
-  
-  install_tool "$name" "$repo" "$archive_pattern" "$binname"
+
+  if [ -z "$archive_pattern" ]; then
+    # shellcheck disable=SC1090
+    source "$common"
+    warn "$name: no archive_pattern in manifest (skipped)"
+    return 0
+  fi
+
+  # shellcheck disable=SC1090
+  source "$common"
+  init_tools_dir
+  install_tool "$name" "$repo" "$archive_pattern" "${binname:-$name}"
 }
 
-# export for parallel execution
-export -f install_tool_from_entry install_tool download_url have
+export -f _install_one
 
 # --- main --------------------------------------------------------------------
 log "Installing tools from manifest: $MANIFEST"
@@ -128,18 +154,18 @@ case "$INSTALL_MODE" in
   parallel)
     log "Installing in parallel (${PARALLEL_JOBS} concurrent jobs)"
     if command -v parallel >/dev/null 2>&1; then
-      # Use GNU parallel (most efficient)
-      printf '%s\n' "$entries" | parallel -j "$PARALLEL_JOBS" --halt soon,fail=1 install_tool_from_entry
+      # Use GNU parallel (most efficient); each job sources common.sh via _install_one.
+      printf '%s\n' "$entries" | parallel -j "$PARALLEL_JOBS" --halt soon,fail=1 _install_one
     else
       # Fall back to xargs
-      printf '%s\n' "$entries" | xargs -P "$PARALLEL_JOBS" -I {} bash -c 'install_tool_from_entry "$@"' _ {}
+      printf '%s\n' "$entries" | xargs -P "$PARALLEL_JOBS" -I {} bash -c '_install_one "$@"' _ {}
     fi
     ;;
   sequential)
     log "Installing sequentially"
     while IFS= read -r entry; do
       [ -z "$entry" ] && continue
-      install_tool_from_entry "$entry" || { warn "Failed to install from entry: $entry"; }
+      _install_one "$entry" || { warn "Failed to install from entry: $entry"; }
     done <<<"$entries"
     ;;
   *)

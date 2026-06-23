@@ -12,7 +12,7 @@ SHELL_DIR="$DOTFILES_DIR/config/shell"
 STOW_DIR="$DOTFILES_DIR/config/stow"
 LOCAL_DIR="${DOTFILES_LOCAL:-$DOTFILES_DIR/local}"
 DISABLED_FILE="$LOCAL_DIR/disabled"
-WORK_STOW_DIR="$LOCAL_DIR/work"
+WORK_STOW_DIR="$DOTFILES_DIR/var/work"
 WORK_PKG="$WORK_STOW_DIR/mounts"
 WORK_TARGET="${DOTFILES_WORK_TARGET:-$HOME/Work}"
 STOW_BIN="$DOTFILES_DIR/install/bin/stow"
@@ -35,7 +35,7 @@ update	git pull --ff-only, then re-run install.sh
 update-tools [--all | TOOL...]	update tools from manifest or re-install specific tools
 compile	byte-compile the zsh framework (.zwc) for faster startup
 stow [--if-needed]	(re)create the dotfiles symlinks via stow
-work-stow [--if-needed]	stow ~/Work links (from ~/bin/gfs/mount.lst)
+work-stow [--if-needed]	stow ~/Work links (from local/profile/mount.lst)
 doctor	health checks (paths, symlinks, core tools, var/)
 doctor-tools	detailed tool health check (binaries, versions, hooks)
 validate	validate configuration integrity (syntax, symlinks, profiles)
@@ -173,8 +173,14 @@ cmd_stow() {
   bash "$step"
 }
 
-# needs_work_stow — true (0) if ~/Work/scratch or ~/Work/tmp is not linked yet.
+# _has_mount_lst — true if a work mount list exists under local/profile/ (or legacy local/).
+_has_mount_lst() {
+  [ -r "$LOCAL_DIR/profile/mount.lst" ] || [ -r "$LOCAL_DIR/mount.lst" ]
+}
+
+# needs_work_stow — true (0) if mount.lst exists and ~/Work links are missing.
 needs_work_stow() {
+  _has_mount_lst || return 1
   [ -L "$WORK_TARGET/scratch" ] && [ -L "$WORK_TARGET/tmp" ] || return 0
   return 1
 }
@@ -220,35 +226,57 @@ cmd_doctor() {
 
   printf '%slocal profile%s\n' "$c_b" "$c_r"
   chk "profile/.gitignore present" "[ -r '$LOCAL_DIR/profile/.gitignore' ]"
-  local gfs_dir="${DOTFILES_GFS_DIR:-$HOME/bin/gfs}"
-  chk "~/bin/gfs/company.sh present" "[ -r '$gfs_dir/company.sh' ]"
-  chk "~/bin/gfs/mount.lst present" "[ -r '$gfs_dir/mount.lst' ]"
-  if [ -e "$LOCAL_DIR/profile/company.sh" ]; then
-    chk "profile/company.sh readable" "[ -r '$LOCAL_DIR/profile/company.sh' ]"
-    if [ -L "$LOCAL_DIR/profile/company.sh" ]; then
-      printf '  %s·%s company.sh -> %s\n' "$c_b" "$c_r" "$(readlink "$LOCAL_DIR/profile/company.sh" 2>/dev/null || true)"
-    fi
+  if [ -r "$LOCAL_DIR/profile/secrets.sh" ]; then
+    chk "profile/secrets.sh present" "[ -r '$LOCAL_DIR/profile/secrets.sh' ]"
   else
-    printf '  %s·%s profile/company.sh not linked (ln -sf ~/bin/gfs/company.sh local/profile/company.sh)\n' "$c_off" "$c_r"
-    bad=$((bad+1))
+    printf '  %s·%s no profile/secrets.sh (optional; create local/profile/secrets.sh)\n' "$c_b" "$c_r"
+  fi
+  if _has_mount_lst; then
+    chk "profile/mount.lst present" "[ -r '$LOCAL_DIR/profile/mount.lst' ] || [ -r '$LOCAL_DIR/mount.lst' ]"
+    if [ -r "$LOCAL_DIR/profile/company.sh" ]; then
+      chk "profile/company.sh present" "[ -r '$LOCAL_DIR/profile/company.sh' ]"
+    else
+      printf '  %s·%s no profile/company.sh (optional; create local/profile/company.sh)\n' "$c_off" "$c_r"
+    fi
   fi
 
-  printf '%s~/Work mounts%s\n' "$c_b" "$c_r"
-  if needs_work_stow; then
-    printf '  %s✘%s ~/Work not stowed — run: dotfiles work-stow\n' "$c_off" "$c_r"; bad=$((bad+1))
+  if _has_mount_lst; then
+    printf '%s~/Work mounts%s\n' "$c_b" "$c_r"
+    if needs_work_stow; then
+      printf '  %s✘%s ~/Work not stowed — run: dotfiles work-stow\n' "$c_off" "$c_r"; bad=$((bad+1))
+    else
+      printf '  %s✔%s ~/Work/scratch and ~/Work/tmp linked\n' "$c_on" "$c_r"; ok=$((ok+1))
+      local w resolved
+      for w in scratch tmp; do
+        [ -L "$WORK_TARGET/$w" ] || continue
+        resolved="$(readlink -f "$WORK_TARGET/$w" 2>/dev/null || readlink "$WORK_TARGET/$w" 2>/dev/null || true)"
+        if [ -n "$resolved" ] && [ ! -e "$resolved" ]; then
+          printf '  %s!%s ~/Work/%s target missing: %s\n' "$c_off" "$c_r" "$w" "$resolved"
+          bad=$((bad+1))
+        else
+          printf '  %s·%s ~/Work/%s -> %s\n' "$c_b" "$c_r" "$w" "$resolved"
+        fi
+      done
+    fi
+  fi
+
+  printf '%slocal layout%s\n' "$c_b" "$c_r"
+  local legacy
+  if [ -r "$LOCAL_DIR/mount.lst" ] && [ ! -r "$LOCAL_DIR/profile/mount.lst" ]; then
+    printf '  %s!%s stale local/mount.lst — move to local/profile/mount.lst\n' "$c_off" "$c_r"
+    bad=$((bad+1))
+  fi
+  for legacy in profile.example work disabled.example README.example mount.lst.example; do
+    [ -e "$LOCAL_DIR/$legacy" ] || continue
+    printf '  %s!%s stale local/%s (safe to remove — see docs/STRUCTURE.md)\n' "$c_off" "$c_r" "$legacy"
+    bad=$((bad+1))
+  done
+  if [ -d "$LOCAL_DIR/work" ]; then
+    printf '  %s·%s work-stow now uses var/work/; rm -rf local/work\n' "$c_b" "$c_r"
+  elif [ ! -d "$DOTFILES_DIR/var/work" ] || [ -z "$(ls -A "$DOTFILES_DIR/var/work" 2>/dev/null)" ]; then
+    : # no legacy work dir, var/work empty or missing — fine
   else
-    printf '  %s✔%s ~/Work/scratch and ~/Work/tmp linked\n' "$c_on" "$c_r"; ok=$((ok+1))
-    local w resolved
-    for w in scratch tmp; do
-      [ -L "$WORK_TARGET/$w" ] || continue
-      resolved="$(readlink -f "$WORK_TARGET/$w" 2>/dev/null || readlink "$WORK_TARGET/$w" 2>/dev/null || true)"
-      if [ -n "$resolved" ] && [ ! -e "$resolved" ]; then
-        printf '  %s!%s ~/Work/%s target missing: %s\n' "$c_off" "$c_r" "$w" "$resolved"
-        bad=$((bad+1))
-      else
-        printf '  %s·%s ~/Work/%s -> %s\n' "$c_b" "$c_r" "$w" "$resolved"
-      fi
-    done
+    printf '  %s✔%s work-stow package in var/work/\n' "$c_on" "$c_r"; ok=$((ok+1))
   fi
 
   printf '\n%d ok, %d issue(s)\n' "$ok" "$bad"
@@ -380,8 +408,9 @@ cmd_sync() {
     --exclude '*.zwc' \
     --exclude '.git/' \
     --exclude 'local/profile/*.sh' \
+    --exclude 'local/profile/mount.lst' \
     --exclude 'local/disabled' \
-    --exclude 'local/work/mounts/' \
+    --exclude 'local/mount.lst' \
     "$src" "$DOTFILES_DIR/"
 }
 
@@ -407,12 +436,10 @@ _gen_man() {
     printf '.TP\n.B $DOTFILES_DIR/config/zsh\nZDOTDIR: zsh startup files.\n'
     printf '.TP\n.B $DOTFILES_DIR/var\nGenerated, gitignored tools/plugins/cache.\n'
     printf '.TP\n.B $DOTFILES_LOCAL/profile\n'
-    printf 'Semantic drop-ins: secrets login aliases tools company (.sh). Only\n'
-    printf 'profile.example/ templates are tracked; your profile/*.sh are gitignored.\n'
+    printf 'Per-user shell drop-ins (secrets.sh aliases.sh company.sh mount.lst). Gitignored.\n'
     printf '.TP\n.B $DOTFILES_LOCAL/disabled\nPersisted module toggles (dotfiles disable).\n'
-    printf '.TP\n.B ~/bin/gfs\n'
-    printf 'Machine work dir: company.sh (profile) + mount.lst (~/Work links).\n'
-    printf 'Symlink local/profile/company.sh -> ~/bin/gfs/company.sh.\n'
+    printf '.TP\n.B $DOTFILES_DIR/var/work\n'
+    printf 'Generated stow package for ~/Work links (not in config/stow/ — machine-specific).\n'
     printf '.SH SEE ALSO\nstow(8), zsh(1), starship(1), sheldon(1)\n'
   } > "$out"
   echo "wrote $out"

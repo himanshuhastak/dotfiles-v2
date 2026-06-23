@@ -38,49 +38,38 @@
 ## Local profile (`$DOTFILES_DIR/local/profile/`)
 
 `$DOTFILES_LOCAL` defaults to `$DOTFILES_DIR/local`. Per-user config lives in
-`$DOTFILES_LOCAL/profile/*.sh`. Only `profile.example/` templates are tracked in
-git — copy them to `profile/` and drop the `.example` suffix.
+`$DOTFILES_LOCAL/profile/*.sh` (gitignored; create files as needed).
 
-**Stable semantic files** (fixed names; load timing is hardcoded in the entrypoints):
+**Profile files** (create manually under `local/profile/`):
 
 | File | Loaded from | Use for |
 |---|---|---|
 | `secrets.sh` | `.zshenv` / `00-env.sh` | every shell — secrets, PATH, exports |
-| `login.sh` | `.zprofile` | login zsh only |
 | `aliases.sh` | `.zshrc` (early) | interactive aliases |
-| `tools.sh` | `.zshrc` (after compinit) | per-tool hooks |
-| `company.sh` | `.zshrc` (last) | work / cluster env |
+| `company.sh` | `.zshrc` (last) | work / cluster env (optional) |
+| `mount.lst` | `dotfiles work-stow` | `path:shortname` lines for `~/Work/` links |
 
-`local/disabled` — module toggles (`dotfiles disable`); not a profile file.
+Optional: `login.sh` (`.zprofile`), `tools.sh` (after compinit).
 
-Quick start:
+`local/profile/mount.lst` — optional `path:shortname` lines for `dotfiles work-stow`.
+`local/disabled` — module toggles (`dotfiles disable`); created automatically.
 
 ```sh
 mkdir -p local/profile
-cp local/profile.example/*.example local/profile/
-for f in local/profile/*.example; do mv "$f" "${f%.example}"; done
+# echo 'export MY_TOKEN=…' > local/profile/secrets.sh
 exec zsh
 ```
 
-Skip one file on a machine: `dotfiles disable company`.
-
-### `~/bin/gfs` (recommended for cluster / work machines)
-
-One directory outside the repo for machine-specific work setup:
+### Work machines (optional)
 
 ```sh
-mkdir -p ~/bin/gfs
-cp local/gfs.example/* ~/bin/gfs/
-ln -sf ~/bin/gfs/company.sh local/profile/company.sh
+printf '/scratch/$USER:scratch\n/tmp:tmp\n' > local/profile/mount.lst
+# edit local/profile/company.sh for your cluster modules
+dotfiles work-stow
 ```
 
-| File | Purpose |
-|---|---|
-| `company.sh` | LSF / cluster shell env (`_load_profile company`) |
-| `mount.lst` | `path:shortname` lines for `dotfiles work-stow` → `~/Work/` |
-
-`dotfiles sync` excludes `local/profile/*.sh` and `local/work/`; `~/bin/gfs/`
-is never touched by rsync.
+Generated work-stow symlinks live in `var/work/` (not `local/` or `config/stow/`).
+`dotfiles sync` excludes `local/profile/*` and `local/disabled`.
 
 ## Host-specific tweaks (outside the repo)
 

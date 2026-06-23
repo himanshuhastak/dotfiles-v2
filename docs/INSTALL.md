@@ -56,34 +56,31 @@ rm -rf var && ./install.sh
 | tools | `var/tools/bin` (on `PATH`) |
 | plugins | `var/vendor` |
 | caches/state | `~/.cache`, `~/.local/state` (XDG) — **not** in `var/` |
-| secrets/overrides | `$DOTFILES_LOCAL/profile/*.sh` (see NAMING.md) |
+| secrets/overrides | `$DOTFILES_LOCAL/profile/*.sh` (gitignored; see NAMING.md) |
 
-Copy `local/profile.example/*.example` to `local/profile/*.sh` — your copies are gitignored.
+Create `local/profile/*.sh` as needed — nothing is shipped as templates.
 
-For cluster / work machines, keep everything in `~/bin/gfs/` (outside the repo):
+For cluster / work machines (optional):
 
 ```sh
-mkdir -p ~/bin/gfs
-cp local/gfs.example/* ~/bin/gfs/
-vim ~/bin/gfs/company.sh ~/bin/gfs/mount.lst
-ln -sf ~/bin/gfs/company.sh local/profile/company.sh
+printf '/scratch/$USER:scratch\n/tmp:tmp\n' > local/profile/mount.lst
+# create local/profile/company.sh with your cluster module sources
 dotfiles work-stow
 ```
 
-`mount.lst` format: `path:shortname` (one per line). Defaults in the template:
-
-```
-/scratch/$USER:scratch
-/tmp:tmp
-```
+`mount.lst` format: `path:shortname` (one per line, `#` comments ok).
 
 ## ~/Work disk links
 
 ```sh
-dotfiles work-stow    # reads ~/bin/gfs/mount.lst -> ~/Work/scratch, ~/Work/tmp, …
+dotfiles work-stow    # reads local/profile/mount.lst -> ~/Work/scratch, ~/Work/tmp, …
 ```
 
-Edit `~/bin/gfs/mount.lst`, then re-run `dotfiles work-stow`.
+Stow builds a temporary package under `var/work/` (generated, gitignored) and
+links it into `~/Work/`. It is **not** in `config/stow/` because mount paths are
+machine-specific and derived from your `mount.lst`.
+
+Edit `local/profile/mount.lst`, then re-run `dotfiles work-stow`.
 
 ## Sync from another machine
 
@@ -103,13 +100,14 @@ rsync -avzl -e ssh \
   --exclude '*.zwc' \
   --exclude '.git/' \
   --exclude 'local/profile/*.sh' \
+  --exclude 'local/profile/mount.lst' \
   --exclude 'local/disabled' \
-  --exclude 'local/work/mounts/' \
+  --exclude 'local/mount.lst' \
   arctest5:~/dotfiles-v2/ \
   ~/dotfiles-v2/
 ```
 
-`local/profile/*.sh` and `local/disabled` are excluded so machine-specific secrets stay on each host. Templates (`profile.example/`, `local/profile/.gitignore`) still copy.
+`local/profile/*` and `local/disabled` are excluded so machine-specific config stays on each host. Only `local/profile/.gitignore` is tracked in git.
 
 ## Uninstall
 

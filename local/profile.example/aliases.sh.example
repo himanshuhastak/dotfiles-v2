@@ -1,4 +1,0 @@
-# aliases.sh — interactive aliases. Copy to profile/aliases.sh (gitignored).
-#
-# alias ll='ls -lah'
-# alias gs='git status -sb'

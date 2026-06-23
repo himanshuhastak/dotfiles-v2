@@ -1,3 +1,0 @@
-# login.sh — login zsh only. Copy to profile/login.sh (gitignored).
-#
-# export MY_CLUSTER="login-node"

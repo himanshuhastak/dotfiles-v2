@@ -1,2 +1,0 @@
-# company.sh — symlink to ~/bin/gfs/company.sh (see local/gfs.example/).
-#   ln -sf ~/bin/gfs/company.sh local/profile/company.sh

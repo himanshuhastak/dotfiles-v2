@@ -1,4 +1,0 @@
-# Module toggles — one name per line (managed by `dotfiles disable <name>`).
-# Copy to `disabled` (gitignored) or let dotfiles create it on first disable.
-#
-# company

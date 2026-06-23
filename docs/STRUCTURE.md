@@ -4,7 +4,7 @@
 
 ```
 dotfiles_v2/
-  local/                      profile/*.sh per-user overrides (profile.example/ tracked)
+  local/                      gitignored per-user overrides (only profile/.gitignore tracked)
   install.sh                  thin wrapper -> install/bootstrap.sh
   bin/dotfiles                management CLI (on PATH via $DOTFILES_DIR/bin)
   Makefile                    convenience targets (wrap the CLI)
@@ -90,6 +90,7 @@ Everything under `var/` is generated/downloaded and gitignored:
 - `var/tools/` — self-installed CLI binaries (on PATH first).
 - `var/vendor/` — cloned zsh plugins, zsh-defer, Zellij WASM plugins (`zellij-plugins/`).
 - `var/cache/` — installer scratch.
+- `var/work/` — generated work-stow package for `~/Work` mount links.
 
 Durable shell state (zcompdump, init caches, history) lives under XDG
 (`~/.cache`, `~/.local/state`), **not** in `var/`. To reinstall cleanly:
@@ -97,33 +98,23 @@ Durable shell state (zcompdump, init caches, history) lives under XDG
 
 ## Local profile (`local/profile/`)
 
-Per-user config uses **stable semantic filenames**, not numbered phases. Only
-`local/profile.example/` templates and `local/profile/.gitignore` are tracked;
-real `profile/*.sh` files are gitignored.
+Per-user shell drop-ins. All files are gitignored; only `local/profile/.gitignore` is tracked.
 
 | File | When loaded | Typical contents |
 |---|---|---|
 | `secrets.sh` | every zsh (via `.zshenv`) | API tokens, extra PATH |
-| `login.sh` | login zsh (`.zprofile`) | cluster login exports |
 | `aliases.sh` | interactive zsh (early `.zshrc`) | personal aliases |
-| `tools.sh` | interactive zsh (after compinit) | `_defer` tool inits |
-| `company.sh` | interactive zsh (last) | work / LSF / cluster env |
+| `company.sh` | interactive zsh (last) | work / LSF / cluster env (optional) |
+| `mount.lst` | `dotfiles work-stow` | disk shortcuts into `~/Work/` (optional) |
 
-`company.sh` is a symlink to `~/bin/gfs/company.sh` (cluster / LSF env).
-Disk shortcuts come from `~/bin/gfs/mount.lst` via `dotfiles work-stow`.
+## ~/Work mounts (`local/profile/mount.lst` → `var/work/` → `~/Work/`)
 
-## ~/Work mounts (`~/bin/gfs/mount.lst`)
-
-`path:shortname` lines (comments with `#` ok; `$USER` expands):
-
-| Link | Typical line |
-|---|---|
-| `scratch` | `/scratch/$USER:scratch` |
-| `tmp` | `/tmp:tmp` |
+`path:shortname` lines in `local/profile/mount.lst` (e.g. `/scratch/$USER:scratch`).
 
 ```sh
-dotfiles work-stow   # stows into ~/Work/
+dotfiles work-stow
 ```
 
-Edit `~/bin/gfs/mount.lst`, then re-run `dotfiles work-stow`. Use `cd ~work`
-after stowing (zsh named dir).
+This generates a stow package under **`var/work/`** (not `local/work/`, not
+`config/stow/`). `config/stow/` holds tracked dotfiles shared across machines;
+`var/work/` is regenerated per host from your `mount.lst`.

@@ -193,7 +193,7 @@ aliases = [["t", "task"]]
 
 [[tool]]
 name = "taskwarrior-tui"
-repo = "TsReaper/taskwarrior-tui"
+repo = "kdheepak/taskwarrior-tui"
 archive_pattern = "taskwarrior-tui-{arch}-unknown-linux-musl.tar.gz"
 description = "Task manager TUI"
 category = "productivity"

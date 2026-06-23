@@ -2,6 +2,7 @@
 #   var/tools/   built/downloaded CLI binaries, compiled bash/zsh, venvs
 #   var/vendor/  sheldon plugin clones, zellij WASM plugins, lockfile artifacts
 #   var/cache/   transient download/build cache
+#   var/work/    generated stow package for ~/Work mount links (not in config/stow/)
 /var/
 
 # Compiled zsh bytecode (produced by `dotfiles compile`).
@@ -21,15 +22,7 @@
 *~
 .DS_Store
 
-# Per-user local overrides — only templates are tracked (see local/README.example).
-# Real profile/*.sh and local/disabled are never committed.
+# Per-user overrides (gitignored). Only profile/.gitignore is tracked.
 local/**
-!local/*.example
-!local/profile.example/
-!local/profile.example/**
 !local/profile/
 !local/profile/.gitignore
-!local/gfs.example/
-!local/gfs.example/**
-!local/work/
-!local/work/.gitignore
