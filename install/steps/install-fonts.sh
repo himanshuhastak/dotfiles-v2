@@ -1,21 +1,40 @@
 #!/usr/bin/env bash
-# Install bundled Fira Mono Nerd Font (for starship/zellij/tmux glyphs).
+# Install all bundled Nerd Fonts from nerdfonts/ (for starship/zellij/tmux glyphs).
 set -euo pipefail
 source "$(dirname "$0")/../common.sh"
 
-dest="$FONT_DIR/$DOTFILES_FONT_FILE"
-
-if [ ! -f "$DOTFILES_FONT_SRC" ]; then
-  warn "bundled font not found: $DOTFILES_FONT_SRC"
+if [ ! -d "$DOTFILES_NERDFONTS_DIR" ]; then
+  warn "bundled fonts dir not found: $DOTFILES_NERDFONTS_DIR"
   exit 1
 fi
 
-if [ -f "$dest" ]; then
-  skip "$DOTFILES_FONT_LABEL"
-else
-  log "Installing $DOTFILES_FONT_LABEL -> $FONT_DIR"
-  mkdir -p "$FONT_DIR"
-  install -m 0644 "$DOTFILES_FONT_SRC" "$dest"
+font_files=()
+shopt -s nullglob
+for ext in otf ttf OTF TTF; do
+  font_files+=("$DOTFILES_NERDFONTS_DIR"/*."$ext")
+done
+shopt -u nullglob
+
+if [ ${#font_files[@]} -eq 0 ]; then
+  warn "no font files found in $DOTFILES_NERDFONTS_DIR"
+  exit 1
+fi
+
+installed=0
+mkdir -p "$FONT_DIR"
+for src in "${font_files[@]}"; do
+  name="$(basename "$src")"
+  dest="$FONT_DIR/$name"
+  if [ -f "$dest" ]; then
+    skip "$name"
+  else
+    log "Installing $name -> $FONT_DIR"
+    install -m 0644 "$src" "$dest"
+    ok "$name"
+    installed=$((installed + 1))
+  fi
+done
+
+if [ "$installed" -gt 0 ]; then
   command -v fc-cache >/dev/null 2>&1 && fc-cache -f "$FONT_DIR" >/dev/null 2>&1 || true
-  ok "$DOTFILES_FONT_LABEL (set terminal font to \"$DOTFILES_FONT_LABEL\")"
 fi

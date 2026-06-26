@@ -1,7 +1,7 @@
 {
-  // Font: install/steps/install-fonts.sh -> firacode_nerdfont/FiraMonoNerdFontMono-Regular.otf
-  "editor.fontFamily": "'FiraMono Nerd Font Mono', monospace",
+  // Fonts: install/steps/install-fonts.sh -> nerdfonts/*.otf, nerdfonts/*.ttf
+  "editor.fontFamily": "'JetBrainsMono Nerd Font Mono', 'FiraMono Nerd Font Mono', monospace",
   "editor.fontSize": 13,
-  "terminal.integrated.fontFamily": "'FiraMono Nerd Font Mono', monospace",
+  "terminal.integrated.fontFamily": "'JetBrainsMono Nerd Font Mono', 'FiraMono Nerd Font Mono', monospace",
   "terminal.integrated.fontSize": 13
 }

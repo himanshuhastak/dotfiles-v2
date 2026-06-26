@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Remove JetBrains Mono Nerd Font files from $FONT_DIR.
-# Manual only — install-fonts.sh installs Fira Mono by default and does not
-# touch JetBrains. Run when you want to drop the old font:
+# Manual only — install-fonts.sh installs every font in nerdfonts/, including
+# JetBrains. Run when you want to drop JetBrains from $FONT_DIR:
 #   install/steps/remove-jetbrains-font.sh
 set -euo pipefail
 source "$(dirname "$0")/../common.sh"

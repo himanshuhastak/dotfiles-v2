@@ -54,8 +54,19 @@ echo "  theme:   catppuccin mocha (starship, zellij, bat, delta, lazygit, fzf)"
 have starship && echo "  prompt:  starship"
 have sheldon  && echo "  zsh:     sheldon plugins -> $DOTFILES/var/vendor"
 have zellij   && echo "  mux:     zellij + plugins -> $DOTFILES/var/vendor/zellij-plugins"
-[ -f "$FONT_DIR/$DOTFILES_FONT_FILE" ] && \
-  echo "  font:    $DOTFILES_FONT_LABEL (select in terminal)"
+if [ -d "$DOTFILES_NERDFONTS_DIR" ]; then
+  fonts_installed=0
+  for f in "$DOTFILES_NERDFONTS_DIR"/*; do
+    [ -f "$f" ] || continue
+    case "$f" in
+      *.otf|*.ttf|*.OTF|*.TTF)
+        [ -f "$FONT_DIR/$(basename "$f")" ] && fonts_installed=$((fonts_installed + 1))
+        ;;
+    esac
+  done
+  [ "$fonts_installed" -gt 0 ] && \
+    echo "  fonts:   $fonts_installed bundled Nerd Font(s) in $FONT_DIR (default: $DOTFILES_FONT_LABEL)"
+fi
 echo
 if [ -x "$BIN/zsh" ]; then
   echo "Open a fresh shell:  exec $BIN/zsh -l   (or: dotfiles reload)"

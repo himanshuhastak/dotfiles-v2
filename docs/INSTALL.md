@@ -27,7 +27,7 @@ Steps (see `install/steps/`):
 5. **stow-dotfiles** — symlinks the `config/stow/*` packages into `$HOME`
    (notably `~/.zshenv`, the ZDOTDIR bootstrap).
 6. **install-sheldon-plugins** — clones zsh plugins + `zsh-defer` into `var/vendor`.
-7. **install-fonts** — bundled FiraMono Nerd Font Mono (JetBrains: remove manually via `install/steps/remove-jetbrains-font.sh` if needed).
+7. **install-fonts** — all bundled Nerd Fonts from `nerdfonts/` (FiraMono, JetBrains Mono, …). Remove JetBrains manually via `install/steps/remove-jetbrains-font.sh` if needed.
 8. **fix-ssh** — `~/.ssh` permissions + ensure local `.pub` keys are in `authorized_keys`.
 9. **fix-x11-forwarding** — XAUTH patch when `DISPLAY` is set (also on each zsh login).
 10. **fix-task-hooks**, then **compile** (`.zwc`) and **doc man**.
