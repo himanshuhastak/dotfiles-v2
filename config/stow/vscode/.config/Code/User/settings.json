@@ -1,7 +1,8 @@
 {
-  // Fonts: install/steps/install-fonts.sh -> nerdfonts/*.otf, nerdfonts/*.ttf
-  "editor.fontFamily": "'JetBrainsMono Nerd Font Mono', 'FiraMono Nerd Font Mono', monospace",
-  "editor.fontSize": 13,
-  "terminal.integrated.fontFamily": "'JetBrainsMono Nerd Font Mono', 'FiraMono Nerd Font Mono', monospace",
-  "terminal.integrated.fontSize": 13
+    "editor.fontFamily": "'JetBrainsMono NFM', 'FiraMono Nerd Font Mono', Consolas, monospace",
+    "editor.fontSize": 13,
+    "editor.fontLigatures": true,
+    "terminal.integrated.fontFamily": "'JetBrainsMono NFM', 'FiraMono Nerd Font Mono', Consolas, monospace",
+    "terminal.integrated.fontSize": 13,
+    "terminal.integrated.fontLigatures.enabled": true
 }
