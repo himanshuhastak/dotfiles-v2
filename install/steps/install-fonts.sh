@@ -1,25 +1,21 @@
 #!/usr/bin/env bash
-# Install JetBrains Mono Nerd Font (for starship/zellij/tmux glyphs).
+# Install bundled Fira Mono Nerd Font (for starship/zellij/tmux glyphs).
 set -euo pipefail
 source "$(dirname "$0")/../common.sh"
 
-marker="$FONT_DIR/JetBrainsMonoNerdFont-Regular.ttf"
-if [ -f "$marker" ]; then
-  skip "JetBrains Mono Nerd Font"
-  exit 0
-fi
-command -v unzip >/dev/null 2>&1 || { warn "unzip required"; exit 1; }
-command -v curl  >/dev/null 2>&1 || { warn "curl required"; exit 1; }
+dest="$FONT_DIR/$DOTFILES_FONT_FILE"
 
-log "Installing JetBrains Mono Nerd Font -> $FONT_DIR"
-mkdir -p "$FONT_DIR" "$CACHE"
-tmp="$(mktemp -d "$CACHE/jetbrains-mono.XXXXXX")"
-if curl -fsSL -o "$tmp/JetBrainsMono.zip" \
-    https://github.com/ryanoasis/nerd-fonts/releases/latest/download/JetBrainsMono.zip \
-    && unzip -q "$tmp/JetBrainsMono.zip" -d "$FONT_DIR"; then
-  command -v fc-cache >/dev/null 2>&1 && fc-cache -f "$FONT_DIR" >/dev/null 2>&1 || true
-  ok "JetBrains Mono Nerd Font (set it as your terminal font)"
-else
-  warn "font install failed (cosmetic only)"
+if [ ! -f "$DOTFILES_FONT_SRC" ]; then
+  warn "bundled font not found: $DOTFILES_FONT_SRC"
+  exit 1
 fi
-rm -rf "$tmp" 2>/dev/null || true
+
+if [ -f "$dest" ]; then
+  skip "$DOTFILES_FONT_LABEL"
+else
+  log "Installing $DOTFILES_FONT_LABEL -> $FONT_DIR"
+  mkdir -p "$FONT_DIR"
+  install -m 0644 "$DOTFILES_FONT_SRC" "$dest"
+  command -v fc-cache >/dev/null 2>&1 && fc-cache -f "$FONT_DIR" >/dev/null 2>&1 || true
+  ok "$DOTFILES_FONT_LABEL (set terminal font to \"$DOTFILES_FONT_LABEL\")"
+fi

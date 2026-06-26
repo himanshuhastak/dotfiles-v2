@@ -29,6 +29,9 @@ TOOLS_DIR="$DOTFILES/var/tools"     # self-owned; NEVER reuse system/NFS tools
 BIN="$TOOLS_DIR/bin"
 CACHE="$DOTFILES/var/cache"
 FONT_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/fonts"
+DOTFILES_FONT_SRC="$DOTFILES/firacode_nerdfont/FiraMonoNerdFontMono-Regular.otf"
+DOTFILES_FONT_FILE="FiraMonoNerdFontMono-Regular.otf"
+DOTFILES_FONT_LABEL="FiraMono Nerd Font Mono"
 
 # --- pretty logging ----------------------------------------------------------
 log()  { printf '\033[1;34m==>\033[0m %s\n' "$*"; }

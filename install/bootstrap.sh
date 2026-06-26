@@ -54,8 +54,8 @@ echo "  theme:   catppuccin mocha (starship, zellij, bat, delta, lazygit, fzf)"
 have starship && echo "  prompt:  starship"
 have sheldon  && echo "  zsh:     sheldon plugins -> $DOTFILES/var/vendor"
 have zellij   && echo "  mux:     zellij + plugins -> $DOTFILES/var/vendor/zellij-plugins"
-[ -f "$FONT_DIR/JetBrainsMonoNerdFont-Regular.ttf" ] && \
-  echo "  font:    JetBrainsMono Nerd Font (select in terminal)"
+[ -f "$FONT_DIR/$DOTFILES_FONT_FILE" ] && \
+  echo "  font:    $DOTFILES_FONT_LABEL (select in terminal)"
 echo
 if [ -x "$BIN/zsh" ]; then
   echo "Open a fresh shell:  exec $BIN/zsh -l   (or: dotfiles reload)"

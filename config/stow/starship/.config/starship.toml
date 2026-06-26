@@ -1,4 +1,4 @@
-# Catppuccin Mocha — JetBrains Mono Nerd Font symbols (starship nerd-font-symbols preset).
+# Catppuccin Mocha — FiraMono Nerd Font Mono symbols (starship nerd-font-symbols preset).
 "$schema" = 'https://starship.rs/config-schema.json'
 
 scan_timeout = 10000
