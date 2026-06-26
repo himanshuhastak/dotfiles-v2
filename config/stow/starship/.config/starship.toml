@@ -1,10 +1,11 @@
-# Catppuccin Mocha — minimal prompt (no OS, ASCII-friendly symbols).
+# Catppuccin Mocha — JetBrains Mono Nerd Font symbols (starship nerd-font-symbols preset).
 "$schema" = 'https://starship.rs/config-schema.json'
 
 scan_timeout = 10000
 command_timeout = 1000
 
 format = """
+$os\
 $hostname\
 $directory\
 $git_branch\
@@ -29,7 +30,70 @@ $character"""
 palette = "catppuccin_mocha"
 
 [os]
-disabled = true
+disabled = false
+style = "red"
+format = "[$symbol]($style)"
+
+[os.symbols]
+AIX = ""
+AlmaLinux = ""
+Alpaquita = ""
+Alpine = ""
+ALTLinux = ""
+Amazon = ""
+Android = ""
+AOSC = ""
+Arch = ""
+Artix = ""
+Bluefin = ""
+CachyOS = ""
+CentOS = ""
+Debian = ""
+DragonFly = ""
+Elementary = ""
+Emscripten = ""
+EndeavourOS = ""
+Fedora = ""
+FreeBSD = ""
+Garuda = ""
+Gentoo = ""
+HardenedBSD = "󰞌"
+Illumos = ""
+InstantOS = ""
+Ios = "󰀷"
+Kali = ""
+Linux = ""
+Mabox = ""
+Macos = ""
+Manjaro = ""
+Mariner = ""
+MidnightBSD = ""
+Mint = ""
+NetBSD = ""
+NixOS = ""
+Nobara = ""
+OpenBSD = ""
+OpenCloudOS = ""
+openEuler = ""
+openSUSE = ""
+OracleLinux = "󰺡"
+PikaOS = ""
+Pop = ""
+Raspbian = ""
+RaspberryPiOS = ""
+Redhat = "󱄛"
+RedHatEnterprise = "󱄛"
+Redox = "󰀘"
+RockyLinux = ""
+Solus = ""
+SUSE = ""
+Ubuntu = ""
+Ultramarine = ""
+Unknown = ""
+Uos = ""
+Void = ""
+Windows = "󰍲"
+Zorin = ""
 
 [hostname]
 ssh_only = false
@@ -42,19 +106,19 @@ style = "bold text"
 format = " [$path]($style)"
 truncation_length = 0
 truncate_to_repo = false
-read_only = " ro"
+read_only = " 󰌾"
 
 [directory.substitutions]
-"Documents" = "docs/"
-"Downloads" = "dl/"
-"Music" = "music/"
-"Pictures" = "pics/"
-"Developer" = "dev/"
+"Documents" = "󰈙 "
+"Downloads" = " "
+"Music" = "󰝚 "
+"Pictures" = " "
+"Developer" = "󰲋 "
 
 [git_branch]
-symbol = ""
+symbol = ""
 style = "mauve"
-format = " [$branch]($style)"
+format = " [$symbol $branch]($style)"
 
 [git_status]
 style = "subtext0"
@@ -63,93 +127,93 @@ use_git_executable = true
 untracked = "?${count}"
 modified = "!${count}"
 staged = "+${count}"
-deleted = "x${count}"
-renamed = ">${count}"
+deleted = "✘${count}"
+renamed = "»${count}"
 stashed = '\$'
-ahead = "^${count}"
-behind = "v${count}"
-diverged = "^${ahead_count}v${behind_count}"
+ahead = "⇡${count}"
+behind = "⇣${count}"
+diverged = "⇕⇡${ahead_count}⇣${behind_count}"
 
 [time]
 disabled = false
 time_format = "%R"
 style = "overlay0"
-format = " [$time]($style)"
+format = " [󰥔 $time]($style)"
 
 [c]
-symbol = "c"
+symbol = ""
 style = "subtext0"
 format = " [$symbol$version]($style)"
 
 [rust]
-symbol = "rs"
+symbol = "󱘗"
 style = "subtext0"
 format = " [$symbol$version]($style)"
 
 [golang]
-symbol = "go"
+symbol = ""
 style = "subtext0"
 format = " [$symbol$version]($style)"
 
 [nodejs]
-symbol = "node"
+symbol = ""
 style = "subtext0"
 format = " [$symbol$version]($style)"
 
 [bun]
-symbol = "bun"
+symbol = ""
 style = "subtext0"
 format = " [$symbol$version]($style)"
 
 [php]
-symbol = "php"
+symbol = ""
 style = "subtext0"
 format = " [$symbol$version]($style)"
 
 [java]
-symbol = "java"
+symbol = ""
 style = "subtext0"
 format = " [$symbol$version]($style)"
 
 [kotlin]
-symbol = "kt"
+symbol = ""
 style = "subtext0"
 format = " [$symbol$version]($style)"
 
 [haskell]
-symbol = "hs"
+symbol = ""
 style = "subtext0"
 format = " [$symbol$version]($style)"
 
 [python]
-symbol = "py"
+symbol = ""
 style = "subtext0"
 format = " [$symbol$version]($style)"
 
 [docker_context]
-symbol = "docker"
+symbol = ""
 style = "subtext0"
 format = " [$symbol $context]($style)"
 
 [conda]
-symbol = ""
+symbol = ""
 style = "subtext0"
-format = "[$environment]($style)"
+format = "[$symbol$environment]($style)"
 ignore_base = true
 
 [cmd_duration]
 disabled = false
 min_time = 3_000
 style = "overlay0"
-format = " [$duration]($style)"
+format = " ·  [$duration]($style)"
 
 [line_break]
 disabled = true
 
 [character]
-success_symbol = "[>](peach)"
-error_symbol = "[>](red)"
-vimcmd_symbol = "[<](subtext1)"
+success_symbol = "[❯](peach)"
+error_symbol = "[❯](red)"
+vimcmd_symbol = "[❮](subtext1)"
 
 [username]
 disabled = true

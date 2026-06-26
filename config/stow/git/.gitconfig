@@ -5,26 +5,128 @@
 
 [init]
 	defaultBranch = main
+
 [pull]
 	rebase = false
+
+[core]
+	editor = vim
+	autocrlf = false
+
 [pager]
 	diff = delta
 	show = delta
 	log = delta
 	reflog = delta
+
 [interactive]
 	diffFilter = delta --color-only
+
 [delta]
 	navigate = true
 	line-numbers = true
 	side-by-side = true
 	features = catppuccin-mocha
+
 [include]
 	path = ~/.config/delta/catppuccin.gitconfig
+
+[push]
+	default = current
+	autoSetupRemote = true
+
+[status]
+	submoduleSummary = true
+
+[diff]
+	tool = vscode
+	renames = copy
+	ignoreSpaceChange = true
+
+[merge]
+	tool = vscode
+
+[difftool "vscode"]
+	cmd = code --wait --diff $LOCAL $REMOTE
+
+[mergetool "vscode"]
+	cmd = code --wait $MERGED
+
+[grep]
+	lineNumber = true
+
+[color]
+	ui = true
+
+[color "diff"]
+	meta = yellow bold
+	old = red bold
+	new = green bold
+
+[color "status"]
+	added = green bold
+	changed = yellow
+	untracked = cyan
+
+[help]
+	autocorrect = 20
+
 [alias]
-	lg = log --oneline --graph --decorate --all -20
+	# Log & branches
+	lg = log --graph --decorate --pretty=tformat:'%C(red)%h%C(reset) %C(blue)[%an]%C(reset) - %C(auto)%d%C(reset) %s %C(green)(%cr) %C(reset) ' --abbrev-commit
+	br = branch --format='%(HEAD) [%(authorname)] %(color:yellow)%(refname:short)%(color:reset) - %(contents:subject) %(color:green)(%(committerdate:relative))' --sort=-committerdate
+	last = log -1 HEAD --stat
+	summary = shortlog -e --summary --numbered
+	new = !sh -c 'git lg $1@{1}..$1@{0} "$@"'
+
+	# Shortcuts
 	st = status -sb
 	co = checkout
-	br = branch
 	ci = commit
-	last = log -1 HEAD --stat
+	rename = branch -m
+	switch = ! git switch -c $1 || git switch $1
+
+	# Undo
+	undo = reset HEAD~1 --mixed
+	undoAll = reset --hard
+
+	# Remote / branch hygiene
+	branchState = !git fetch origin && git remote show origin && :
+	branchOptimize = !git fetch origin && git remote prune origin && :
+	bclean = "!f() { base=\"${1:-main}\"; git branch --merged \"$base\" | grep -v \"^[* ] $base$\" | xargs -r git branch -d; }; f"
+	showParentB = "!f() { \
+		current_branch=$(git branch --show-current); \
+		git reflog \"$current_branch\" | grep -io 'moving from [^[:space:]]+' | awk 'NR==2{print $3}'; \
+	}; f"
+
+	# Diff (line / word / char)
+	d = diff
+	ds = diff --staged
+	dw = diff --color-words
+	dws = diff --color-words --staged
+	dc = diff --word-diff-regex=.
+	dcs = diff --word-diff-regex=. --staged
+	dt = difftool -y
+	diff-file-last-commit = "!f() { \
+		project_root_dir=$(git rev-parse --show-toplevel); \
+		filepath=$(find \"$project_root_dir\" -type f -name \"$1\" | head -1); \
+		last_modified_commit_hash=$(git rev-list -1 HEAD -- \"$filepath\"); \
+		git difftool -y \"$last_modified_commit_hash^\" -- \"$filepath\"; \
+	}; f"
+
+	# Merge / push helpers
+	mergeTest = "!f(){ git merge --no-commit --no-ff \"$1\"; git merge --abort; echo \"Merge aborted\"; }; f"
+	pushMR = "!f(){ \
+		if [[ $# -lt 1 ]]; then echo \"provide target branch for merge request\"; exit 1; fi; \
+		git push -o merge_request.create -o merge_request.target=\"${1:-main}\" -o merge_request.assign=\"${2:-$USER}\"; \
+	}; f"
+	pushAMR = "!f(){ \
+		if [[ $# -lt 1 ]]; then echo \"provide target branch for merge request\"; exit 1; fi; \
+		git push -o merge_request.create -o merge_request.target=\"${1:-main}\" -o merge_request.assign=\"${2:-$USER}\" \
+			-o merge_request.merge_when_pipeline_succeeds; \
+	}; f"
+
+	# Submodules
+	pullSM = ! git pull && git submodule update --init --depth=1
+	smu = submodule update --init
+	smuf = submodule update --init --force
