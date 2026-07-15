@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
-"""GitLab productivity commands (invite, list)."""
+"""GitLab productivity commands (invite, list, test)."""
 
 import argparse
+import json
 import sys
 
 from dotfiles_tools.config import gitlab_connection
@@ -58,11 +59,42 @@ def _client(args):
     return glinvite.gl(url, token, verify_ssl=verify), cfg
 
 
+def print_test_report(report):
+    # type: (dict) -> None
+    user = report.get('user') or {}
+    print('GitLab API test: OK')
+    print('  url:      {}'.format(report.get('url')))
+    print('  user:     {} ({})'.format(
+        user.get('username') or user.get('name'),
+        user.get('id'),
+    ))
+    if user.get('name'):
+        print('  name:     {}'.format(user.get('name')))
+    if user.get('email'):
+        print('  email:    {}'.format(user.get('email')))
+    if user.get('state'):
+        print('  state:    {}'.format(user.get('state')))
+
+    group = report.get('root_group')
+    if group:
+        print('  group:    {} ({})'.format(group.get('full_path'), group.get('id')))
+
+
 def build_parser():
     parser = argparse.ArgumentParser(
         description='GitLab group/project invite and listing.',
     )
     sub = parser.add_subparsers(dest='command')
+
+    test_p = sub.add_parser('test', help='Verify GitLab URL and token')
+    test_p.add_argument(
+        '--root-group-id', type=int, metavar='ID',
+        help='also verify access to this group (default: gitlab.root_group_id in config)',
+    )
+    test_p.add_argument('--url', help='GitLab base URL')
+    test_p.add_argument('--token', help='GitLab personal access token')
+    test_p.add_argument('--insecure', action='store_true')
+    test_p.add_argument('--json', action='store_true')
 
     list_p = sub.add_parser('list', help='List groups and repos under a root group')
     list_p.add_argument(
@@ -104,6 +136,23 @@ def main(argv=None):
         build_parser().print_help()
         return 2
     client, cfg = _client(args)
+
+    if args.command == 'test':
+        root_id = getattr(args, 'root_group_id', None)
+        if root_id is None:
+            root_id = cfg.get('root_group_id')
+        try:
+            report = glinvite.test_connection(client, root_group_id=root_id)
+        except ValueError as exc:
+            print('GitLab API test: FAILED', file=sys.stderr)
+            print('  {}'.format(exc), file=sys.stderr)
+            return 1
+
+        if args.json:
+            print(json.dumps(report, indent=2))
+        else:
+            print_test_report(report)
+        return 0
 
     if args.command == 'list':
         glinvite.list_tree(

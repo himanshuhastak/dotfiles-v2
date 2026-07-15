@@ -15,6 +15,52 @@ def gl(url, token, verify_ssl=False):
     return gitlab.Gitlab(url, private_token=token, ssl_verify=verify_ssl, timeout=120)
 
 
+def test_connection(gl, root_group_id=None):
+    """Verify token auth; optionally confirm visibility of a root group."""
+    import gitlab.exceptions as glexc
+
+    report = {
+        'url': gl.url,
+        'auth': 'ok',
+        'user': None,
+        'root_group': None,
+    }
+
+    try:
+        gl.auth()
+    except glexc.GitlabAuthenticationError as exc:
+        raise ValueError('authentication failed: {}'.format(exc)) from exc
+    except glexc.GitlabError as exc:
+        raise ValueError('connection failed: {}'.format(exc)) from exc
+
+    user = gl.user
+    if user is None:
+        raise ValueError('authentication succeeded but no user profile returned')
+
+    report['user'] = {
+        'id': user.id,
+        'username': user.username,
+        'name': getattr(user, 'name', None),
+        'email': getattr(user, 'email', None),
+        'state': getattr(user, 'state', None),
+    }
+
+    if root_group_id is not None:
+        try:
+            group = gl.groups.get(int(root_group_id))
+        except glexc.GitlabGetError as exc:
+            raise ValueError(
+                'root group {} not found or not visible: {}'.format(root_group_id, exc)
+            ) from exc
+        report['root_group'] = {
+            'id': group.id,
+            'name': group.name,
+            'full_path': _group_full_path(group),
+        }
+
+    return report
+
+
 def emails(users, domain=None):
     out = []
     for u in users:

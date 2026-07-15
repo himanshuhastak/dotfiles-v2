@@ -12,7 +12,7 @@ def main(argv=None):
         print(
             'usage: dotfiles <command> …\n'
             '  jira …          create/update/sync/test/validate issues\n'
-            '  gitlab …        list / invite\n'
+            '  gitlab …        list / invite / test\n'
             '  secrets …       set|list|clear|export (OS keyring)\n'
             '  bugwarrior …    render|pull|uda\n'
             '  invite …        run local/tools/invite_policy.py\n'
