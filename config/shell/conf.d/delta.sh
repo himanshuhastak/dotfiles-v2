@@ -7,5 +7,6 @@ export GIT_PAGER=delta
 export LESS="${LESS:--RXF}"
 export DELTA_PAGER="${DELTA_PAGER:-less -+FX}"
 
-# Let delta also handle plain `diff` output when called via git aliases.
-export GIT_EXTERNAL_DIFF=delta
+# Paging is also set in ~/.gitconfig [pager] diff/show/log/reflog = delta.
+# Do not set GIT_EXTERNAL_DIFF: delta is a pager (stdin), not a git external-diff
+# driver (file paths + object ids). That misconfiguration breaks `git diff`.

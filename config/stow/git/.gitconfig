@@ -130,3 +130,5 @@
 	pullSM = ! git pull && git submodule update --init --depth=1
 	smu = submodule update --init
 	smuf = submodule update --init --force
+[user]
+	email = hhastak@globalfoundries.com

@@ -4,6 +4,10 @@
 # non-interactive zsh (`zsh -c`, `#!/usr/bin/zsh` scripts, scp/rsync) stays clean.
 : "${DOTFILES_DIR:=$HOME/dotfiles_v2}"
 
+# BASH leaks when zsh is spawned from bash; /etc/profile.d/modules.sh then loads
+# init/bash under zsh (export -f errors). Safe to drop — we are in zsh.
+[[ -n ${BASH+x} ]] && unset BASH
+
 # Prefer self-built zsh over /bin/zsh — re-exec once (same idea as bash .bashrc).
 if [[ -z "${DOTFILES_NO_ZSH_REEXEC:-}" && -z "${DOTFILES_ZSH_REEXECED:-}" ]]; then
   [[ -r "$DOTFILES_DIR/config/shell/lib/dotfiles-zsh.sh" ]] && \

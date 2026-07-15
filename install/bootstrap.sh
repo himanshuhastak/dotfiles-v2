@@ -29,6 +29,7 @@ run() {
 }
 
 run install-stow.sh
+bash "$INSTALL/bin/fix-executable-bits.sh" >/dev/null 2>&1 || true
 run fetch-themes.sh "${THEME_ARGS[@]}"
 [ "$SKIP_TOOLS" -eq 0 ] && run install-tools.sh "${TOOL_ARGS[@]}" || skip "tools (--skip-tools)"
 run install-zellij-plugins.sh

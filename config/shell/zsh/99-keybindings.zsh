@@ -58,6 +58,8 @@ _dotbind '^[[F'    end-of-line             # End
 _dotbind '^[[3~'   delete-char             # Delete
 _dotbind '^[[3;5~' kill-word               # Ctrl-Delete
 _dotbind '^[[3;3~' kill-word               # Alt-Delete
+_dotbind '^W'     backward-kill-word        # Ctrl-Backspace (showkey: ^W / 0x17)
+_dotbind '^[^?'  backward-kill-line        # Alt+Backspace (showkey: ^[^? / ESC+DEL)
 _dotbind '^[[1;5D' backward-word           # Ctrl-Left
 _dotbind '^[[1;5C' forward-word            # Ctrl-Right
 _dotbind '^[[1;3D' backward-word           # Alt-Left
