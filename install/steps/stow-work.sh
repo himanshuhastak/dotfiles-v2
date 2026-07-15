@@ -8,7 +8,7 @@ WORK_STOW_DIR="$DOTFILES/var/work"
 WORK_PKG="$WORK_STOW_DIR/mounts"
 WORK_TARGET="${DOTFILES_WORK_TARGET:-$HOME/Work}"
 
-# Canonical: local/profile/mount.lst (same tree as secrets.sh, company.sh, …).
+# Canonical: local/profile/mount.lst (same tree as local.sh, company.sh, …).
 _resolve_mount_lst() {
   local base="${1:-$LOCAL_DIR}" f
   for f in "$base/profile/mount.lst" "$base/mount.lst"; do

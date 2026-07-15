@@ -1,0 +1,14 @@
+# local/profile/local.sh — machine env for every shell (optional, gitignored).
+#
+#   cp tools/examples/local.sh.example local/profile/local.sh
+#
+# Do NOT put API tokens here. Use:
+#   dotfiles secrets set jira_api_token
+#   dotfiles secrets set gitlab_token
+#
+# Examples (uncomment as needed):
+
+# export EDITOR=vim
+# export PATH="$HOME/bin:$PATH"
+
+# Company/cluster module loads belong in company.sh (interactive) or login.sh.

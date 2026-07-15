@@ -1,0 +1,56 @@
+# Example local invite policy (copy to local/tools/invite_policy.py — not committed).
+#
+#   cp tools/examples/invite_policy.py.example local/tools/invite_policy.py
+#   dotfiles invite --users alice --dry-run
+#
+# Keep company-specific paths / group IDs only in the local copy.
+
+"""Invite users using generic GitLab helpers + your local path policy."""
+from __future__ import print_function
+
+import argparse
+import sys
+
+from dotfiles_tools.config import gitlab_connection
+from dotfiles_tools.gitlab import invite as gi
+
+
+def paths_for(args):
+    # Replace with your own mapping. Paths are relative to gitlab.root_group_id.
+    # Example only — edit the local copy.
+    if args.paths:
+        return [p.strip() for p in args.paths.split(',') if p.strip()]
+    return ['team/example']
+
+
+def main():
+    p = argparse.ArgumentParser(description='Local GitLab invite policy')
+    p.add_argument('--users', required=True, help='comma-separated users/emails')
+    p.add_argument('--paths', help='override paths (comma-separated)')
+    p.add_argument('--dry-run', action='store_true')
+    p.add_argument('--access-level', type=int, default=gi.DEVELOPER)
+    args = p.parse_args()
+
+    cfg = gitlab_connection()
+    url, token = cfg.get('url'), cfg.get('token')
+    root = cfg.get('root_group_id')
+    if not url or not token:
+        sys.exit('Need gitlab.url + token (dotfiles secrets set gitlab_token)')
+    if root is None:
+        sys.exit('Need gitlab.root_group_id in local/tools/config.toml')
+
+    client = gi.gl(url, token, verify_ssl=bool(cfg.get('verify_ssl', True)))
+    users = [u.strip() for u in args.users.split(',') if u.strip()]
+    gi.invite(
+        client,
+        users,
+        root_id=int(root),
+        paths=paths_for(args),
+        level=args.access_level,
+        dry_run=args.dry_run,
+        domain=cfg.get('email_domain'),
+    )
+
+
+if __name__ == '__main__':
+    main()

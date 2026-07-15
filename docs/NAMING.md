@@ -18,7 +18,7 @@
 | 10–19 | history and other core interactive setup |
 | 20–29 | completion system (compinit) |
 | 30–49 | UI/nav (term title, dir hashes, autoloaded functions) |
-| 50–89 | maintenance / conditional hooks |
+| 50–89 | maintenance / conditional hooks (unused range ok) |
 | 90–95 | deferral backend, then plugins |
 | 96–99 | keybindings that depend on plugins |
 
@@ -40,25 +40,25 @@
 `$DOTFILES_LOCAL` defaults to `$DOTFILES_DIR/local`. Per-user config lives in
 `$DOTFILES_LOCAL/profile/*.sh` (gitignored; create files as needed).
 
-**Profile files** (create manually under `local/profile/`):
-
 | File | Loaded from | Use for |
 |---|---|---|
-| `secrets.sh` | `.zshenv` / `00-env.sh` | every shell — secrets, PATH, exports |
+| `local.sh` | `.zshenv` / `00-env.sh` | every shell — PATH, machine env (**no tokens**) |
 | `aliases.sh` | `.zshrc` (early) | interactive aliases |
 | `company.sh` | `.zshrc` (last) | work / cluster env (optional) |
-| `mount.lst` | `dotfiles work-stow` | `path:shortname` lines for `~/Work/` links |
+| `login.sh` | `.zprofile` | login-only setup |
+| `mount.lst` | `dotfiles work-stow` | `path:shortname` lines for `~/Work/` |
 
-Optional: `login.sh` (`.zprofile`), `tools.sh` (after compinit).
-
-`local/profile/mount.lst` — optional `path:shortname` lines for `dotfiles work-stow`.
-`local/disabled` — module toggles (`dotfiles disable`); created automatically.
+**API tokens:** `dotfiles secrets` (OS keyring) — not shell profile files.
+Legacy `secrets.sh` is **not** loaded; `dotfiles doctor` warns if it still exists.
 
 ```sh
 mkdir -p local/profile
-# echo 'export MY_TOKEN=…' > local/profile/secrets.sh
+cp tools/examples/local.sh.example local/profile/local.sh
+dotfiles secrets set jira_api_token
 exec zsh
 ```
+
+`local/disabled` — module toggles (`dotfiles disable`); created automatically.
 
 ### Work machines (optional)
 
@@ -83,20 +83,14 @@ Override the local root with `export DOTFILES_LOCAL=/path/to/other` if needed.
 ### Bash → zsh handoff (`~/.bashrc`)
 
 Interactive bash execs a clean `env -i` login zsh via `config/shell/lib/bash-zsh-handoff.sh`.
-X11 (`DISPLAY`, `XAUTHORITY`, cookies) is handled in `.zprofile` on every login shell — SSH,
-LSF (`bsub -Is`), or plain login — not in `.bashrc`.
+X11 (`DISPLAY`, `XAUTHORITY`, cookies) is handled in `.zprofile` on every login shell.
 
 | `DOTFILES_ZSH_LOGIN` | Handoff | `.zprofile` |
 |---|---|---|
 | `1` / `yes` / unset (default) | `zsh -l` | runs |
 | `0` / `no` / `nonlogin` | `zsh` | skipped |
 
-`DISPLAY`, `XAUTHORITY`, SSH client vars, and `LSB_JOBID` are forwarded when set.
-
 ```sh
-# non-login handoff for one session
+# non-login handoff for one session (or set in local/profile/local.sh)
 export DOTFILES_ZSH_LOGIN=0
-
-# or in local/profile/secrets.sh for a given machine
-export DOTFILES_ZSH_LOGIN=nonlogin
 ```

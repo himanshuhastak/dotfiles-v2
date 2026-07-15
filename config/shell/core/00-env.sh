@@ -97,5 +97,6 @@ if [ -d "$DOTFILES_DIR/man" ]; then
   esac
 fi
 
-# Machine env + secrets (untracked). Loaded in ALL shells (incl. scripts). Silent.
-_load_profile secrets
+# Machine env (untracked). Loaded in ALL shells. Silent.
+# Tokens: use `dotfiles secrets` (OS keyring) — not shell profile files.
+_load_profile local

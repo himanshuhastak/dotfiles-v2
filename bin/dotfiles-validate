@@ -76,7 +76,7 @@ cmd_check_config() {
   # 5. Check profiles
   printf '\n%sProfiles%s\n' "$c_b" "$c_r"
   local profile_files=(
-    "$LOCAL_DIR/profile/secrets.sh"
+    "$LOCAL_DIR/profile/local.sh"
     "$LOCAL_DIR/profile/aliases.sh"
     "$LOCAL_DIR/profile/tools.sh"
     "$LOCAL_DIR/profile/company.sh"

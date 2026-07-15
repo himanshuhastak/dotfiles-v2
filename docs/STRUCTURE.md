@@ -26,10 +26,19 @@ dotfiles_v2/
     bootstrap.sh common.sh cleanup.sh
     bin/ (stow)  steps/  tools/
   test/                       bats smoke tests
+  tools/                      productivity (dotfiles_tools Python package)
   docs/  man/                 documentation + generated man page
   var/                        GENERATED, gitignored: tools/ vendor/ cache/
 ```
 
+**CLI surface**
+
+| Command | Role |
+|---------|------|
+| `dotfiles` | shell/env: stow, doctor, check, bench, … |
+| `dotfiles jira\|gitlab\|secrets\|bugwarrior\|invite` | productivity (one venv: `dotfiles-run`) |
+
+Productivity dispatch: `bin/dotfiles` → `bin/dotfiles-run` → `python -m dotfiles_tools <cmd>`.
 ## ZDOTDIR
 
 `~/.zshenv` (stow package `home`) is the only zsh file in `$HOME`. At startup it:
@@ -44,10 +53,13 @@ per-file zsh symlinks.
 
 ## Startup / load order
 
-`.zshenv` (every zsh): `loader.sh` → `core/00-env.sh` → `profile/secrets.sh`.
+`.zshenv` (every zsh): `loader.sh` → `core/00-env.sh` → `profile/local.sh`
+(optional).
 
-`.zprofile` (login only): `dotfiles stow --if-needed` → `profile/login.sh` →
-`~/.zprofile.$USER`.
+`.zprofile` (login only): `dotfiles stow --if-needed` → `dotfiles work-stow
+--if-needed` → `profile/login.sh` → `~/.zprofile.$USER`.
+
+Stow self-heal runs **only on login** (no deferred non-login heal).
 
 `.zshrc` (interactive): `core/10-functions.sh` → `core/20-aliases.sh` →
 `profile/aliases.sh` → `config/shell/zsh/*` → `conf.d/*` → `profile/tools.sh` →
@@ -66,7 +78,6 @@ zsh modules load in this order:
 | 30 | termsupport | terminal title hooks |
 | 40 | hashdirs | `hash -d` named dirs (`~dot`) |
 | 45 | functions | autoload `functions/` |
-| 50 | ensure-stowed | self-heal symlinks (deferred) |
 | 90 | defer | source zsh-defer; upgrade `_defer` to async |
 | 95 | plugins | sheldon (`syntax-highlighting` last) |
 | 99 | keybindings | history-substring-search, edit-command-line |
@@ -87,7 +98,9 @@ synchronous `eval` (defined in `loader.sh`), so nothing breaks.
 
 Everything under `var/` is generated/downloaded and gitignored:
 
-- `var/tools/` — self-installed CLI binaries (on PATH first).
+- `var/tools/` — self-installed CLI binaries (on PATH first) plus versioned
+  Python venvs: `var/tools/python/<X.Y>/dotfiles-tools/` with
+  `var/tools/python/current` → active version.
 - `var/vendor/` — cloned zsh plugins, zsh-defer, Zellij WASM plugins (`zellij-plugins/`).
 - `var/cache/` — installer scratch.
 - `var/work/` — generated work-stow package for `~/Work` mount links.
@@ -102,10 +115,14 @@ Per-user shell drop-ins. All files are gitignored; only `local/profile/.gitignor
 
 | File | When loaded | Typical contents |
 |---|---|---|
-| `secrets.sh` | every zsh (via `.zshenv`) | API tokens, extra PATH |
+| `local.sh` | every shell (via `.zshenv`) | PATH, machine env — **no API tokens** |
 | `aliases.sh` | interactive zsh (early `.zshrc`) | personal aliases |
 | `company.sh` | interactive zsh (last) | work / LSF / cluster env (optional) |
+| `login.sh` | login `.zprofile` | login-only setup |
 | `mount.lst` | `dotfiles work-stow` | disk shortcuts into `~/Work/` (optional) |
+
+**Tokens:** `dotfiles secrets` (OS keyring). Legacy `secrets.sh` is not loaded.
+Instance settings: `local/tools/config.toml`. See [PRODUCTIVITY.md](PRODUCTIVITY.md).
 
 ## ~/Work mounts (`local/profile/mount.lst` → `var/work/` → `~/Work/`)
 

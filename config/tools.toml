@@ -360,6 +360,13 @@ install_method = "script"
 optional = true
 
 [[tool]]
+name = "dotfiles-tools"
+repo = "yaml/pyyaml"
+description = "Jira/GitLab productivity commands (Python venv)"
+category = "productivity"
+install_method = "script"
+
+[[tool]]
 name = "bugwarrior"
 repo = "GothenburgBitFactory/bugwarrior"
 description = "Task sync from bug trackers"

@@ -69,13 +69,16 @@ setup() {
   [[ "$output" == *"done"* ]]
 }
 
-@test "_load_profile sources secrets in non-interactive zsh" {
+@test "_load_profile sources local.sh in non-interactive zsh" {
   command -v zsh >/dev/null || skip "zsh not installed"
   mkdir -p "$DOTFILES_LOCAL/profile"
-  printf '%s\n' 'echo secrets-loaded' > "$DOTFILES_LOCAL/profile/secrets.sh"
+  printf '%s\n' 'echo local-loaded' > "$DOTFILES_LOCAL/profile/local.sh"
+  # secrets.sh must NOT be auto-loaded anymore
+  printf '%s\n' 'echo secrets-should-not-load' > "$DOTFILES_LOCAL/profile/secrets.sh"
   run zsh -c '. "$DOTFILES_DIR/config/zsh/.zshenv"; echo done'
   [ "$status" -eq 0 ]
-  [[ "$output" == *"secrets-loaded"* ]]
+  [[ "$output" == *"local-loaded"* ]]
+  [[ "$output" != *"secrets-should-not-load"* ]]
   [[ "$output" == *"done"* ]]
 }
 

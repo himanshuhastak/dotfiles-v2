@@ -1,0 +1,30 @@
+# Non-identity settings only. Copy to:  $DOTFILES_DIR/local/tools/config.toml
+#
+# URLs, emails, usernames, tokens → OS keyring (never this file):
+#   dotfiles secrets set jira_url
+#   dotfiles secrets set jira_email
+#   dotfiles secrets set jira_api_token
+#   dotfiles secrets set gitlab_url
+#   dotfiles secrets set gitlab_token
+#   dotfiles secrets set gitlab_email_domain   # optional
+#
+# Never commit real values.
+
+[jira]
+# api_version = 3
+verify_ssl = true
+default_project = "DEMO"
+
+[gitlab]
+# Numeric ID only — not a hostname. Still keep this file private (local/).
+root_group_id = 0
+verify_ssl = true
+access_level = 30
+
+[bugwarrior]
+targets = ["jira"]
+maintenance = false
+
+[bugwarrior.jira]
+query = "assignee = currentUser() AND resolution = Unresolved"
+import_labels_as_tags = true

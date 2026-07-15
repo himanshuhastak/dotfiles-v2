@@ -1,0 +1,41 @@
+#!/usr/bin/env bash
+# Run productivity tools in the versioned Python venv.
+# Layout:  var/tools/python/<X.Y>/dotfiles-tools
+# Active:  var/tools/python/current -> <X.Y>
+#
+# Build the venv first with whatever python3 is in your environment:
+#   module load …          # optional, your choice
+#   dotfiles update-tools dotfiles-tools
+set -euo pipefail
+
+_self="$(readlink -f "${BASH_SOURCE[0]}" 2>/dev/null || echo "${BASH_SOURCE[0]}")"
+DOTFILES_DIR="${DOTFILES_DIR:-$(cd "$(dirname "$_self")/.." && pwd)}"
+TOOLS_DIR="$DOTFILES_DIR/var/tools"
+
+# shellcheck source=../install/lib/python-venv.sh
+source "$DOTFILES_DIR/install/lib/python-venv.sh"
+
+if ! VENV="$(_df_resolve_venv "$TOOLS_DIR")"; then
+  printf 'dotfiles-run: no venv at %s/python/<ver>/dotfiles-tools\n' "$TOOLS_DIR" >&2
+  printf 'Install with env python3:\n' >&2
+  printf '  (load your toolchain if needed)\n' >&2
+  printf '  dotfiles update-tools dotfiles-tools\n' >&2
+  exit 1
+fi
+
+export DOTFILES_DIR
+export PYTHONPATH="$DOTFILES_DIR/tools${PYTHONPATH:+:$PYTHONPATH}"
+export PYTHONWARNINGS="${PYTHONWARNINGS:-ignore::DeprecationWarning}"
+
+_exports="$("$VENV/bin/python" -m dotfiles_tools.secrets.export 2>/dev/null || true)"
+if [ -n "$_exports" ]; then
+  # shellcheck disable=SC1090
+  eval "$_exports"
+fi
+unset _exports
+
+if [ -z "${BUGWARRIORRC:-}" ] && [ -f "$DOTFILES_DIR/local/tools/bugwarriorrc" ]; then
+  export BUGWARRIORRC="$DOTFILES_DIR/local/tools/bugwarriorrc"
+fi
+
+exec "$VENV/bin/python" "$@"

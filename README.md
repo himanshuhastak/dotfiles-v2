@@ -56,6 +56,7 @@ Run `man dotfiles` after install for the full reference.
 - [docs/INSTALL.md](docs/INSTALL.md) — installing, requirements, uninstalling.
 - [docs/NAMING.md](docs/NAMING.md) — module naming + load-order conventions.
 - [docs/FUNCTIONS.md](docs/FUNCTIONS.md) — portable functions + autoloaded `functions/`.
+- [docs/PRODUCTIVITY.md](docs/PRODUCTIVITY.md) — Jira / GitLab / secrets / bugwarrior (`dotfiles jira` …).
 - [docs/QUALITY.md](docs/QUALITY.md) — linting, secret-scanning, tests, CI, pre-commit.
 
 ## License

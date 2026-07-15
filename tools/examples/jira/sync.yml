@@ -1,0 +1,17 @@
+# Create and update in one file.
+#
+#   dotfiles jira sync tools/examples/jira/sync.yml --dry-run
+
+defaults:
+  project: DEMO
+  issuetype: Task
+  priority: Medium
+
+issues:
+  - summary: Follow-up task created during sync
+    description: Created in the same YAML run as updates below.
+
+updates:
+  - key: DEMO-123
+    add_labels: [synced]
+    comment: Tagged by sync run.

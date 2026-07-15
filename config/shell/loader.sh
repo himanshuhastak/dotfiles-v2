@@ -51,7 +51,7 @@ _load_dir() {
 }
 
 # _load_profile NAME — source $DOTFILES_LOCAL/profile/NAME.sh (semantic drop-in).
-# Stable filenames (secrets, aliases, company); load timing is fixed by the
+# Stable filenames (local, aliases, company); load timing is fixed by the
 # zsh entrypoints — see docs/NAMING.md. Symlinks are fine.
 _load_profile() {
   local name=$1 f

@@ -1,0 +1,34 @@
+# Create JIRA issues from YAML.
+#
+#   export JIRA_URL=https://jira.example.com
+#   export JIRA_EMAIL=you@example.com
+#   export JIRA_API_TOKEN=your-token
+#
+#   dotfiles jira validate tools/examples/jira/create.yml
+#   dotfiles jira create tools/examples/jira/create.yml --dry-run
+
+defaults:
+  project: DEMO
+  issuetype: Task
+  priority: Medium
+
+issues:
+  - summary: Add YAML-based JIRA automation
+    description: |
+      Reads issue definitions from YAML and creates tickets through
+      the public JIRA REST API.
+
+      Acceptance criteria:
+      - Works with Cloud and Server/DC
+      - Supports dry-run and validate modes
+    labels: [automation, yaml]
+    components: [Platform]
+
+  - summary: Investigate flaky regression in parser
+    issuetype: Bug
+    priority: High
+    description_file: descriptions/parser_bug.md
+    assignee: you@example.com
+    fields:
+      # Use your site-specific custom field ids/names here.
+      # customfield_10016: 3

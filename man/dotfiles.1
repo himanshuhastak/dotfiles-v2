@@ -1,4 +1,4 @@
-.TH DOTFILES 1 "2026-06-22" "dotfiles" "Dotfiles Manual"
+.TH DOTFILES 1 "2026-07-15" "dotfiles" "Dotfiles Manual"
 .SH NAME
 dotfiles \- manage the dotfiles shell framework
 .SH SYNOPSIS
@@ -24,17 +24,47 @@ recompile, then re-exec the current shell
 .B update
 git pull --ff-only, then re-run install.sh
 .TP
+.B update-tools [--all | TOOL...]
+update tools from manifest or re-install specific tools
+.TP
+.B jira <cmd> [args]
+Jira YAML create/update/sync/test
+.TP
+.B gitlab <cmd> [args]
+GitLab list / invite
+.TP
+.B secrets <cmd>
+keyring: set|list|clear|export
+.TP
+.B bugwarrior <cmd>
+task sync: render|pull|uda
+.TP
+.B invite [args]
+local invite policy (local/tools/invite_policy.py)
+.TP
 .B compile
 byte-compile the zsh framework (.zwc) for faster startup
 .TP
 .B stow [--if-needed]
 (re)create the dotfiles symlinks via stow
 .TP
+.B work-stow [--if-needed]
+stow ~/Work links (from local/profile/mount.lst)
+.TP
 .B doctor
 health checks (paths, symlinks, core tools, var/)
 .TP
+.B doctor-tools
+detailed tool health check (binaries, versions, hooks)
+.TP
+.B validate
+validate configuration integrity (syntax, symlinks, profiles)
+.TP
 .B check
 lint scripts (shellcheck .sh + zsh -n/zshellcheck .zsh + actionlint + editorconfig)
+.TP
+.B check-aliases
+detect conflicting or redefined aliases
 .TP
 .B audit
 scan the working tree for secrets (betterleaks)
@@ -45,11 +75,11 @@ run the bats smoke tests in test/
 .B bench [N]
 benchmark interactive zsh startup (N runs, default 10)
 .TP
+.B profile [--sort]
+detailed startup profiling by module with timing
+.TP
 .B sync <host:path>
 rsync repo from a remote machine (includes dotfiles; see: dotfiles help sync)
-.TP
-.B profile
-start a zsh that prints a zprof startup timing report
 .TP
 .B doc [man]
 regenerate the man page from this help
@@ -65,10 +95,13 @@ ZDOTDIR: zsh startup files.
 Generated, gitignored tools/plugins/cache.
 .TP
 .B $DOTFILES_LOCAL/profile
-Semantic drop-ins: secrets login aliases tools company (.sh). Only
-profile.example/ templates are tracked; your profile/*.sh are gitignored.
+Per-user shell drop-ins (local.sh aliases.sh company.sh mount.lst). Gitignored.
+API tokens: OS keyring via "dotfiles secrets" (not shell profile files).
 .TP
 .B $DOTFILES_LOCAL/disabled
 Persisted module toggles (dotfiles disable).
+.TP
+.B $DOTFILES_DIR/var/work
+Generated stow package for ~/Work links (not in config/stow/ — machine-specific).
 .SH SEE ALSO
 stow(8), zsh(1), starship(1), sheldon(1)

@@ -30,3 +30,6 @@
 local/**
 !local/profile/
 !local/profile/.gitignore
+
+# Directory UUID stamps (must not be stowed into ~/).
+.uuid

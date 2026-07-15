@@ -1,0 +1,24 @@
+# Update existing JIRA issues from YAML.
+#
+#   dotfiles jira update tools/examples/jira/update.yml --dry-run
+
+update_defaults:
+  add_labels: [yaml-updated]
+
+updates:
+  - key: DEMO-123
+    summary: Parser fails on nested enum values (updated)
+    priority: High
+    description: |
+      Updated triage notes after reproduction on latest build.
+    add_labels: [triage-complete]
+    remove_labels: [needs-triage]
+    assignee: you@example.com
+    comment: Status synced from YAML automation.
+
+  - key: DEMO-456
+    description_file: descriptions/parser_bug.md
+    add_labels: [docs-attached]
+
+  - key: DEMO-789
+    labels: [verified, closed-loop]

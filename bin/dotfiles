@@ -33,6 +33,11 @@ disable <name>...	disable module(s) (persists)
 reload	recompile, then re-exec the current shell
 update	git pull --ff-only, then re-run install.sh
 update-tools [--all | TOOL...]	update tools from manifest or re-install specific tools
+jira <cmd> [args]	Jira YAML create/update/sync/test
+gitlab <cmd> [args]	GitLab list / invite
+secrets <cmd>		keyring: set|list|clear|export
+bugwarrior <cmd>	task sync: render|pull|uda
+invite [args]		local invite policy (local/tools/invite_policy.py)
 compile	byte-compile the zsh framework (.zwc) for faster startup
 stow [--if-needed]	(re)create the dotfiles symlinks via stow
 work-stow [--if-needed]	stow ~/Work links (from local/profile/mount.lst)
@@ -251,10 +256,13 @@ cmd_doctor() {
 
   printf '%slocal profile%s\n' "$c_b" "$c_r"
   chk "profile/.gitignore present" "[ -r '$LOCAL_DIR/profile/.gitignore' ]"
-  if [ -r "$LOCAL_DIR/profile/secrets.sh" ]; then
-    chk "profile/secrets.sh present" "[ -r '$LOCAL_DIR/profile/secrets.sh' ]"
+  if [ -r "$LOCAL_DIR/profile/local.sh" ]; then
+    chk "profile/local.sh present" "[ -r '$LOCAL_DIR/profile/local.sh' ]"
   else
-    printf '  %s·%s no profile/secrets.sh (optional; create local/profile/secrets.sh)\n' "$c_b" "$c_r"
+    printf '  %s·%s no profile/local.sh (optional; PATH / machine env)\n' "$c_b" "$c_r"
+  fi
+  if [ -r "$LOCAL_DIR/profile/secrets.sh" ]; then
+    printf '  %s·%s profile/secrets.sh exists but is NOT loaded — move env to local.sh; tokens → dotfiles secrets\n' "$c_off" "$c_r"
   fi
   if _has_mount_lst; then
     chk "profile/mount.lst present" "[ -r '$LOCAL_DIR/profile/mount.lst' ] || [ -r '$LOCAL_DIR/mount.lst' ]"
@@ -461,7 +469,8 @@ _gen_man() {
     printf '.TP\n.B $DOTFILES_DIR/config/zsh\nZDOTDIR: zsh startup files.\n'
     printf '.TP\n.B $DOTFILES_DIR/var\nGenerated, gitignored tools/plugins/cache.\n'
     printf '.TP\n.B $DOTFILES_LOCAL/profile\n'
-    printf 'Per-user shell drop-ins (secrets.sh aliases.sh company.sh mount.lst). Gitignored.\n'
+    printf 'Per-user shell drop-ins (local.sh aliases.sh company.sh mount.lst). Gitignored.\n'
+    printf 'API tokens: OS keyring via "dotfiles secrets" (not shell profile files).\n'
     printf '.TP\n.B $DOTFILES_LOCAL/disabled\nPersisted module toggles (dotfiles disable).\n'
     printf '.TP\n.B $DOTFILES_DIR/var/work\n'
     printf 'Generated stow package for ~/Work links (not in config/stow/ — machine-specific).\n'
@@ -509,6 +518,11 @@ main() {
     sync)            cmd_sync "$@" ;;
     update)          cmd_update "$@" ;;
     update-tools)    cmd_update_tools "$@" ;;
+    jira)            cmd_jira "$@" ;;
+    gitlab)          cmd_gitlab "$@" ;;
+    bugwarrior)      cmd_bugwarrior "$@" ;;
+    secrets)         cmd_secrets "$@" ;;
+    invite)          cmd_invite "$@" ;;
     doc)             cmd_doc "$@" ;;
     help|-h|--help)  usage ;;
     *)               die "unknown command '$sub' (try: dotfiles help)" ;;
@@ -537,5 +551,18 @@ cmd_update_tools() {
     bash "$install_tools" "$@"
   fi
 }
+
+# Productivity tools share one Python entrypoint (keyring + venv).
+_py() {
+  local run="$DOTFILES_DIR/bin/dotfiles-run"
+  [ -x "$run" ] || die "missing $run — run: dotfiles update-tools dotfiles-tools"
+  exec "$run" -m dotfiles_tools "$@"
+}
+
+cmd_jira()       { _py jira "$@"; }
+cmd_gitlab()     { _py gitlab "$@"; }
+cmd_secrets()    { _py secrets "$@"; }
+cmd_bugwarrior() { _py bugwarrior "$@"; }
+cmd_invite()     { _py invite "$@"; }
 
 main "$@"
