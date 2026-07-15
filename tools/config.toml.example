@@ -18,6 +18,7 @@ default_project = "DEMO"
 [gitlab]
 # Numeric ID only — not a hostname. Still keep this file private (local/).
 root_group_id = 0
+# Set false for internal GitLab instances with a private CA (or use --insecure).
 verify_ssl = true
 access_level = 30
 

@@ -32,9 +32,8 @@ def cmd_list(_args):
         return 0
     for name in sorted(names):
         label = SECRET_LABELS.get(name, name)
-        envs = ', '.join(SECRET_ENV.get(name, []))
         kind = 'hidden' if name in SECRET_HIDDEN else 'identity'
-        print('  {}  ({}) [{}] -> {}'.format(name, label, kind, envs))
+        print('  {}  ({}) [{}]'.format(name, label, kind))
     return 0
 
 
@@ -111,7 +110,10 @@ def build_parser():
     clear_p = sub.add_parser('clear', help='Remove a secret from keyring')
     clear_p.add_argument('name', choices=sorted(SECRET_ENV.keys()))
 
-    export_p = sub.add_parser('export', help='Print export lines for shell eval')
+    export_p = sub.add_parser(
+        'export',
+        help='Print export lines for shell eval (cron/CI only; dotfiles loads keyring itself)',
+    )
     export_p.add_argument(
         '--check', action='store_true',
         help='Exit 0 if any secret exists',

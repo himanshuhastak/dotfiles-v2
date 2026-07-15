@@ -12,7 +12,7 @@ def main(argv=None):
         print(
             'usage: dotfiles <command> …\n'
             '  jira …          create/update/sync/test/validate issues\n'
-            '  gitlab …        list / invite\n'
+            '  gitlab …        list / invite / test\n'
             '  secrets …       set|list|clear|export (OS keyring)\n'
             '  bugwarrior …    render|pull|uda\n'
             '  invite …        run local/tools/invite_policy.py\n'
@@ -21,6 +21,13 @@ def main(argv=None):
 
     cmd = argv[0]
     rest = argv[1:]
+
+    if cmd in ('jira', 'gitlab', 'bugwarrior', 'invite'):
+        try:
+            from dotfiles_tools.secrets_store import export_to_environ
+            export_to_environ()
+        except Exception:
+            pass
 
     if cmd == 'jira':
         from dotfiles_tools.jira.cli import main as jira_main

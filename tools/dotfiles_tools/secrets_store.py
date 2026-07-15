@@ -9,7 +9,7 @@ import stat
 # Keyring service name (shared across jira, gitlab, bugwarrior).
 SERVICE = 'dotfiles-tools'
 
-# Secret name -> env var(s) used at runtime after export.
+# Secret name -> env var(s) used only by `dotfiles secrets export` (cron/CI).
 # Identity (URLs, emails, usernames) and credentials all live here — not in config.toml.
 SECRET_ENV = {
     'jira_url': ['JIRA_URL'],
@@ -185,20 +185,34 @@ def backend_info():
 
 def resolve(name, env_names=None):
     # type: (str, list) -> str
-    """Keyring/file first, then environment (fallback for cron/CI)."""
-    if env_names is None:
-        env_names = SECRET_ENV.get(name, [])
+    """Read a secret from OS keyring / local file store only."""
+    if name not in SECRET_ENV:
+        raise KeyError('unknown secret: {}'.format(name))
     try:
         value = get_secret(name)
         if value:
             return value
     except Exception:
         pass
+    return ''
+
+
+def resolve_env(name):
+    # type: (str) -> str
+    """Optional env fallback — for cron/CI shells that cannot use keyring."""
+    env_names = SECRET_ENV.get(name, [])
     for var in env_names:
         value = os.environ.get(var)
         if value:
             return value
     return ''
+
+
+def resolve_any(name):
+    # type: (str) -> str
+    """Keyring first, then environment (cron/CI escape hatch)."""
+    value = resolve(name)
+    return value or resolve_env(name)
 
 
 def export_env_shell():
@@ -219,6 +233,7 @@ def export_env_shell():
 
 def export_to_environ():
     # type: () -> None
+    """Load keyring secrets into the process env (for bugwarrior oracles / cron)."""
     for name, env_vars in SECRET_ENV.items():
         try:
             value = get_secret(name)

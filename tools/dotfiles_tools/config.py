@@ -1,4 +1,4 @@
-"""Load local config; identity + credentials from OS keyring (env fallback)."""
+"""Load local config; identity + credentials from OS keyring."""
 
 import os
 from typing import Any, Dict, Optional
@@ -44,34 +44,15 @@ def load_config():
     return {}
 
 
-def _env_int(name):
-    # type: (str) -> Optional[int]
-    raw = os.environ.get(name)
-    if raw is None or raw == '':
-        return None
-    try:
-        return int(raw)
-    except ValueError:
-        return None
-
-
-def _env_bool(name, default=None):
-    # type: (str, Optional[bool]) -> Optional[bool]
-    raw = os.environ.get(name)
-    if raw is None or raw == '':
-        return default
-    return raw.lower() not in ('0', 'false', 'no', 'off')
-
-
 def password_oracle(env_var):
     # type: (str) -> str
-    """Bugwarrior reads from env; keyring is exported by the runner."""
+    """Bugwarrior reads tokens from env; dotfiles loads keyring before pull."""
     return '@oracle:eval:printenv {}'.format(env_var)
 
 
 def _pick(overrides, key, secret_name, *config_fallback):
     # type: (Optional[Dict[str, Any]], str, str, *Any) -> Any
-    """CLI override → keyring/env → optional config.toml fallback (legacy)."""
+    """CLI override → keyring → optional config.toml fallback (legacy)."""
     if overrides and overrides.get(key) is not None:
         return overrides[key]
     value = secret_resolve(secret_name)
@@ -103,10 +84,9 @@ def jira_connection(overrides=None):
     )
 
     if cfg.get('api_version') is None:
-        cfg['api_version'] = _env_int('JIRA_API_VERSION')
+        cfg['api_version'] = file_cfg.get('api_version')
     if 'verify_ssl' not in cfg:
-        env_verify = _env_bool('JIRA_VERIFY_SSL')
-        cfg['verify_ssl'] = env_verify if env_verify is not None else True
+        cfg['verify_ssl'] = file_cfg.get('verify_ssl', True)
     return cfg
 
 
@@ -125,12 +105,11 @@ def gitlab_connection(overrides=None):
     )
 
     if cfg.get('root_group_id') is None:
-        cfg['root_group_id'] = _env_int('GITLAB_ROOT_GROUP_ID')
+        cfg['root_group_id'] = file_cfg.get('root_group_id')
     if cfg.get('access_level') is None:
-        cfg['access_level'] = _env_int('GITLAB_ACCESS_LEVEL')
+        cfg['access_level'] = file_cfg.get('access_level')
     if 'verify_ssl' not in cfg:
-        env_verify = _env_bool('GITLAB_VERIFY_SSL')
-        cfg['verify_ssl'] = env_verify if env_verify is not None else True
+        cfg['verify_ssl'] = file_cfg.get('verify_ssl', True)
     return cfg
 
 

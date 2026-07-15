@@ -8,6 +8,10 @@
 # Compiled zsh bytecode (produced by `dotfiles compile`).
 *.zwc
 
+# Python bytecode (produced when running dotfiles-tools).
+__pycache__/
+*.py[cod]
+
 # Logs
 /run.log
 /var/run.log

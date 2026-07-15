@@ -1,8 +1,8 @@
 # Create JIRA issues from YAML.
 #
-#   export JIRA_URL=https://jira.example.com
-#   export JIRA_EMAIL=you@example.com
-#   export JIRA_API_TOKEN=your-token
+#   dotfiles secrets set jira_url
+#   dotfiles secrets set jira_email
+#   dotfiles secrets set jira_api_token
 #
 #   dotfiles jira validate tools/examples/jira/create.yml
 #   dotfiles jira create tools/examples/jira/create.yml --dry-run

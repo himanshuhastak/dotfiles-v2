@@ -34,7 +34,7 @@ def build_parser():
         nargs='?',
         help='YAML definition file (not needed for test)',
     )
-    parser.add_argument('--url', help='JIRA base URL (overrides config / JIRA_URL)')
+    parser.add_argument('--url', help='JIRA base URL (overrides keyring / config)')
     parser.add_argument('--email', help='JIRA account email (Cloud)')
     parser.add_argument('--token', help='JIRA API token')
     parser.add_argument('--user', help='JIRA username (Server/Data Center)')

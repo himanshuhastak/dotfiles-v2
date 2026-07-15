@@ -3,7 +3,6 @@
 
 import base64
 import json
-import os
 import ssl
 from typing import Any, Dict, List, Optional, Tuple
 from urllib.error import HTTPError, URLError
@@ -40,16 +39,18 @@ class JiraClient(object):
             api_version = 3 if '.atlassian.net' in self.base_url else 2
         self.api_version = int(api_version)
 
-        self.email = email or os.environ.get('JIRA_EMAIL')
-        self.token = token or os.environ.get('JIRA_API_TOKEN') or os.environ.get('JIRA_TOKEN')
-        self.username = username or os.environ.get('JIRA_USER') or os.environ.get('JIRA_USERNAME')
-        self.password = password or os.environ.get('JIRA_PASSWORD')
+        self.email = email
+        self.token = token
+        self.username = username
+        self.password = password
 
         auth = self._auth_header()
         if not auth:
             raise JiraError(
-                'Missing credentials. Set JIRA_EMAIL + JIRA_API_TOKEN for Cloud, '
-                'or JIRA_USER + JIRA_TOKEN/JIRA_PASSWORD for Server/Data Center.'
+                'Missing credentials. Run: dotfiles secrets set jira_email && '
+                'dotfiles secrets set jira_api_token (Cloud), or '
+                'dotfiles secrets set jira_username && '
+                'dotfiles secrets set jira_api_token (Server/Data Center).'
             )
 
         self._auth_header = auth
@@ -363,9 +364,11 @@ def as_list(value):
 
 def client_from_mapping(connection):
     # type: (Dict[str, Any]) -> JiraClient
-    url = connection.get('url') or os.environ.get('JIRA_URL')
+    url = connection.get('url')
     if not url:
-        raise JiraError('JIRA URL is required. Set JIRA_URL or connection.url in YAML.')
+        raise JiraError(
+            'JIRA URL is required. Run: dotfiles secrets set jira_url'
+        )
 
     return JiraClient(
         url=url,
