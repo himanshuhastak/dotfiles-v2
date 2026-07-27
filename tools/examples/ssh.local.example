@@ -1,0 +1,19 @@
+# Machine-specific SSH — lives in local/profile/ssh.local (sync dotfiles on each client).
+#
+# LocalForward runs on whichever machine you run ssh from (Windows, Linux, Cursor).
+# Unique local port per host when multiple tunnels from the SAME machine.
+
+# Optional — runs on YOUR PC when ssh connects (not on the remote server):
+#   PermitLocalCommand yes
+#   LocalCommand powershell -Command "Write-Host 'tunnel up %h'"
+# Windows: PermitLocalCommand may need to be under Host * or per-host in ssh.local.
+
+Host my-work-vm-a
+  HostName my-work-vm-a.example.internal
+  LocalForward 5902 127.0.0.1:5901
+
+Host my-work-vm-b
+  HostName my-work-vm-b.example.internal
+  LocalForward 5903 127.0.0.1:5902
+
+# Add hosts — increment local port (5904, 5905, …) for parallel tunnels on one client:

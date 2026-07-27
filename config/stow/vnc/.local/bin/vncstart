@@ -1,0 +1,48 @@
+#!/usr/bin/env bash
+# Start TigerVNC with dotfiles defaults; optional geometry from env or args.
+set -euo pipefail
+
+usage() {
+  cat <<'EOF'
+Usage: vncstart [display] [-g|--geometry WxH]
+
+  display     X display number without colon (default: 2 → port 5902)
+
+Environment:
+  VNC_GEOMETRY   optional fixed size (overrides client-driven resize at start)
+  DOTFILES_DIR   used to source local/profile/vnc.local if set
+
+Without -g, the server starts at TigerVNC default size; TigerVNC Viewer can
+resize the session to match your monitor (fullscreen / scaled window).
+EOF
+}
+
+disp=2
+geometry=""
+while [ $# -gt 0 ]; do
+  case "$1" in
+    -h|--help) usage; exit 0 ;;
+    -g|--geometry)
+      [ -n "${2:-}" ] || { echo "vncstart: missing geometry" >&2; exit 1; }
+      geometry="$2"; shift 2 ;;
+    -*)
+      echo "vncstart: unknown option $1" >&2; exit 1 ;;
+    *)
+      disp="$1"; shift ;;
+  esac
+done
+
+vnc_local=""
+if [ -n "${DOTFILES_DIR:-}" ] && [ -r "$DOTFILES_DIR/local/profile/vnc.local" ]; then
+  vnc_local="$DOTFILES_DIR/local/profile/vnc.local"
+elif [ -r "${HOME}/Git/dotfiles-v2/local/profile/vnc.local" ]; then
+  vnc_local="${HOME}/Git/dotfiles-v2/local/profile/vnc.local"
+fi
+[ -n "$vnc_local" ] && source "$vnc_local"
+
+[ -z "$geometry" ] && geometry="${VNC_GEOMETRY:-}"
+
+args=(-noreset)
+[ -n "$geometry" ] && args+=(-geometry "$geometry")
+
+exec vncserver ":$disp" "${args[@]}"

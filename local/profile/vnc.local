@@ -1,0 +1,5 @@
+# Optional VNC overrides (sourced by vncstart).
+# Omit VNC_GEOMETRY for client-driven resize (fullscreen in TigerVNC Viewer).
+
+# export VNC_GEOMETRY=2560x1440
+# export VNC_DISPLAY=2

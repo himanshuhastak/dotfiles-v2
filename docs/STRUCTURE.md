@@ -13,6 +13,7 @@ dotfiles_v2/
     stow/                     GNU-stow packages -> symlinked into $HOME
       home/.zshenv            the ONLY zsh file in $HOME (ZDOTDIR bootstrap)
       bash/ git/ atuin/ sheldon/ starship/ task/ bat/ lazygit/
+      ssh/ vnc/             optional: ~/.ssh snippets, ~/.vnc templates (conditional stow)
       zellij/                 config.kdl + layouts/ + plugins/ (symlinks → var/vendor)
     shell/                    the framework engine (sourced, never stowed)
       loader.sh               _load_dir/_load_file/_load_profile/_eval_cached/_defer
@@ -111,7 +112,8 @@ Durable shell state (zcompdump, init caches, history) lives under XDG
 
 ## Local profile (`local/profile/`)
 
-Per-user shell drop-ins. All files are gitignored; only `local/profile/.gitignore` is tracked.
+Per-user config in `local/profile/` — **tracked placeholder files** (edit for your
+machines). Only `secrets.sh` is gitignored. See `local/profile/README.md`.
 
 | File | When loaded | Typical contents |
 |---|---|---|

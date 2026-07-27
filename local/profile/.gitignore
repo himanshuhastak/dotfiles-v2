@@ -1,3 +1,2 @@
-# Real profile config — never commit.
-*
-!.gitignore
+# Legacy secrets file — never loaded; use dotfiles secrets
+secrets.sh

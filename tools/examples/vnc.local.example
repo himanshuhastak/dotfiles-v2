@@ -1,0 +1,10 @@
+# Optional VNC overrides (gitignored: local/profile/vnc.local)
+#
+# Leave unset for automatic resolution — TigerVNC Viewer resizes the session
+# when you resize the window or go fullscreen (AcceptSetDesktopSize).
+#
+# Force a fixed size at server start (e.g. always want 4K framebuffer):
+# export VNC_GEOMETRY=3840x2160
+#
+# Default display number for vncstart (default :2 → port 5902):
+# export VNC_DISPLAY=2

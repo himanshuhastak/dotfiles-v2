@@ -37,6 +37,9 @@ run stow-dotfiles.sh
 run install-sheldon-plugins.sh
 [ "$SKIP_FONTS" -eq 0 ] && run install-fonts.sh || skip "fonts (--skip-fonts)"
 run fix-ssh.sh
+bash "$INSTALL/steps/migrate-ssh-profile.sh" 2>/dev/null || true
+run fix-ssh-config.sh
+run profile-git-local.sh
 run fix-default-shell.sh
 run fix-x11-forwarding.sh
 run fix-task-hooks.sh

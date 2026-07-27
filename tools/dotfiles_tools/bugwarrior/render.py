@@ -102,9 +102,10 @@ def render_bugwarriorrc():
         '',
         '[general]',
         'targets = {}'.format(','.join(targets)),
-        'maintenance = {}'.format(_ini_bool(bw.get('maintenance', False))),
-        '',
     ]
+    if bw.get('maintenance'):
+        lines.append('maintenance = true')
+    lines.append('')
 
     for target in targets:
         name = str(target).strip()

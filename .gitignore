@@ -30,10 +30,12 @@ __pycache__/
 *~
 .DS_Store
 
-# Per-user overrides (gitignored). Only profile/.gitignore is tracked.
+# Per-user overrides — profile placeholders are tracked; secrets.sh stays local.
 local/**
 !local/profile/
+!local/profile/**
 !local/profile/.gitignore
+local/profile/secrets.sh
 
 # Directory UUID stamps (must not be stowed into ~/).
 .uuid

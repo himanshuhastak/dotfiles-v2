@@ -41,6 +41,9 @@ invite [args]		local invite policy (local/tools/invite_policy.py)
 compile	byte-compile the zsh framework (.zwc) for faster startup
 stow [--if-needed]	(re)create the dotfiles symlinks via stow
 work-stow [--if-needed]	stow ~/Work links (from local/profile/mount.lst)
+ssh-sync [--if-needed]	link local/profile/ssh.local into ~/.ssh/config.d/
+ssh-migrate		legacy ~/.ssh/config → local/profile/ssh.local
+profile-init		ensure local/profile placeholders exist
 doctor	health checks (paths, symlinks, core tools, var/)
 doctor-tools	detailed tool health check (binaries, versions, hooks)
 validate	validate configuration integrity (syntax, symlinks, profiles)
@@ -199,6 +202,59 @@ cmd_work_stow() {
     needs_work_stow || return 0
   fi
   bash "$step"
+}
+
+# needs_ssh_sync — true if ~/.ssh snippets are missing or out of date.
+needs_ssh_sync() {
+  local dest="$HOME/.ssh/config.d/dotfiles.conf"
+  local src_snippet="$STOW_DIR/ssh/.ssh/config.d/dotfiles.conf"
+  local local_src="$LOCAL_DIR/profile/ssh.local"
+  local local_dest="$HOME/.ssh/config.d/local.conf"
+
+  if [ ! -e "$dest" ]; then return 0; fi
+  if [ -L "$dest" ]; then
+    case "$(readlink -f "$dest" 2>/dev/null || true)" in
+      "$src_snippet") ;;
+      *) return 0 ;;
+    esac
+  fi
+
+  if [ -r "$local_src" ]; then
+    [ -L "$local_dest" ] || return 0
+    [ "$(readlink -f "$local_dest" 2>/dev/null || true)" = \
+      "$(readlink -f "$local_src" 2>/dev/null || true)" ] || return 0
+  fi
+  return 1
+}
+
+cmd_ssh_sync() {
+  local step="$DOTFILES_DIR/install/steps/fix-ssh-config.sh"
+  [ -r "$step" ] || die "ssh-sync: missing $step"
+  if [ "${1:-}" = "--if-needed" ]; then
+    needs_ssh_sync || return 0
+  fi
+  bash "$step"
+}
+
+cmd_ssh_migrate() {
+  local step="$DOTFILES_DIR/install/steps/migrate-ssh-profile.sh"
+  [ -r "$step" ] || die "ssh-migrate: missing $step"
+  bash "$step"
+}
+
+cmd_profile_init() {
+  local f base ok=0
+  for f in "$LOCAL_DIR/profile"/*; do
+    [ -f "$f" ] || continue
+    base="${f##*/}"
+    case "$base" in .gitignore|README.md|secrets.sh) continue ;; esac
+    ok=1
+  done
+  [ "$ok" -eq 1 ] && ok "local/profile placeholders present" || warn "local/profile empty — git pull dotfiles-v2"
+  bash "$DOTFILES_DIR/install/steps/migrate-ssh-profile.sh" 2>/dev/null || true
+  bash "$DOTFILES_DIR/install/steps/profile-git-local.sh" 2>/dev/null || true
+  cmd_ssh_sync
+  ok "profile-init done (edit local/profile/* for your machines)"
 }
 
 cmd_doctor() {
@@ -440,9 +496,8 @@ cmd_sync() {
     --exclude 'var/' \
     --exclude '*.zwc' \
     --exclude '.git/' \
-    --exclude 'local/profile/*.sh' \
-    --exclude 'local/profile/mount.lst' \
-    --exclude 'local/disabled' \
+  --exclude 'local/profile/secrets.sh' \
+  --exclude 'local/disabled' \
     --exclude 'local/mount.lst' \
     "$src" "$DOTFILES_DIR/"
 }
@@ -506,6 +561,9 @@ main() {
     compile)         cmd_compile "$@" ;;
     stow)            cmd_stow "$@" ;;
     work-stow)       cmd_work_stow "$@" ;;
+    ssh-sync)        cmd_ssh_sync "$@" ;;
+    ssh-migrate)     cmd_ssh_migrate "$@" ;;
+    profile-init)    cmd_profile_init "$@" ;;
     doctor)          cmd_doctor "$@" ;;
     doctor-tools)    "$DOTFILES_DIR/bin/dotfiles-tools" doctor ;;
     validate)        "$DOTFILES_DIR/bin/dotfiles-validate" config ;;

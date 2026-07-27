@@ -55,6 +55,9 @@ clean_conflicts() {
   done
 }
 
+# ssh / vnc: always stow managed files (keys, passwd, logs are NOT in packages).
+# User machine config lives in local/profile/ (ssh.local) and is symlinked by ssh-sync.
+
 PKGS=($(discover_packages))
 [ "${#PKGS[@]}" -gt 0 ] || { warn "no stow packages in $STOW_DIR"; exit 1; }
 

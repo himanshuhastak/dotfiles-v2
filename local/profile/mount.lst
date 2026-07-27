@@ -1,0 +1,5 @@
+# Work disk symlinks for dotfiles work-stow → ~/Work/<shortname>
+# Format: path:shortname  (# comments ok)
+#
+# /scratch/$USER:scratch
+# /tmp:tmp

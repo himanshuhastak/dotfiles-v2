@@ -29,8 +29,13 @@ Steps (see `install/steps/`):
 6. **install-sheldon-plugins** — clones zsh plugins + `zsh-defer` into `var/vendor`.
 7. **install-fonts** — all bundled Nerd Fonts from `nerdfonts/` (FiraMono, JetBrains Mono, …). Remove JetBrains manually via `install/steps/remove-jetbrains-font.sh` if needed.
 8. **fix-ssh** — `~/.ssh` permissions + ensure local `.pub` keys are in `authorized_keys`.
-9. **fix-x11-forwarding** — XAUTH patch when `DISPLAY` is set (also on each zsh login).
-10. **fix-task-hooks**, then **compile** (`.zwc`) and **doc man**.
+9. **fix-ssh-config** — SSH `Include` snippets (`config.d/`) + optional `local/profile/ssh.local`.
+10. **fix-x11-forwarding** — XAUTH patch when `DISPLAY` is set (also on each zsh login).
+11. **fix-task-hooks**, then **compile** (`.zwc`) and **doc man**.
+
+**Conditional stow:** packages `ssh` and `vnc` are skipped when `~/.ssh` or `~/.vnc`
+already contains keys, `vncpasswd`, or hand-edited config. Use `local/profile/ssh.local`
+and `fix-ssh-config` to merge generic settings on existing machines.
 
 Flags: `--skip-tools`, `--skip-fonts`, `--fetch-theme`, `--sequential-tools`, `--with-optional-tools`.
 
@@ -86,6 +91,23 @@ machine-specific and derived from your `mount.lst`.
 
 Edit `local/profile/mount.lst`, then re-run `dotfiles work-stow`.
 
+## SSH & VNC
+
+`install.sh` always stows managed `ssh` + `vnc` files (never keys or `vncpasswd`).
+
+Edit tracked placeholders in `local/profile/` — see `local/profile/README.md`.
+
+```sh
+dotfiles profile-init    # migrate legacy SSH + ssh-sync
+dotfiles ssh-migrate     # once: ~/.ssh/config → ssh.local
+dotfiles ssh-sync
+vncpasswd && vncstart
+```
+
+TigerVNC Viewer: resize window or fullscreen for client-driven resolution.
+
+See `tools/examples/vnc.md`.
+
 ## Sync from another machine
 
 Use a **trailing slash** on the source path so hidden files (`.gitignore`, `.editorconfig`, …) copy correctly. Never use `SOURCE/*` — the shell glob skips dotfiles.
@@ -111,7 +133,8 @@ rsync -avzl -e ssh \
   ~/dotfiles-v2/
 ```
 
-`local/profile/*` and `local/disabled` are excluded so machine-specific config stays on each host. Only `local/profile/.gitignore` is tracked in git.
+`dotfiles sync` excludes `local/profile/secrets.sh` and `local/disabled`.
+Profile placeholders ship in git — edit for each machine.
 
 ## Uninstall
 

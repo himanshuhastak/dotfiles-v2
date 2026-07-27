@@ -1,0 +1,13 @@
+# local/profile/login.sh — runs on REMOTE after ssh login (see .zprofile).
+#
+# Good for: module load, vncstart, login-only exports.
+# Not for: SSH tunnels (use ssh.local LocalForward) or secrets (dotfiles secrets).
+#
+# Client-side after connect (Windows): LocalCommand in ssh.local — see ssh.local.example
+
+# module load gcc/12
+
+# Auto-start VNC if down (uncomment on machines where you always want VNC):
+# if command -v vncstart >/dev/null 2>&1; then
+#   vncserver -list 2>/dev/null | grep -q ':2' || vncstart
+# fi
