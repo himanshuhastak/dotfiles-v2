@@ -1,0 +1,13 @@
+[Unit]
+Description=TigerVNC session %i
+After=network.target
+
+[Service]
+Type=forking
+EnvironmentFile=-%h/.vnc/vncserver.env
+ExecStartPre=-/usr/bin/vncserver -kill %i
+ExecStart=/bin/sh -c 'exec /usr/bin/vncserver -noreset ${VNC_EXTRA_ARGS:-} %i'
+ExecStop=/usr/bin/vncserver -kill %i
+
+[Install]
+WantedBy=default.target

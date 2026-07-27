@@ -1,8 +1,20 @@
-# config/tools.toml — Unified tool installer manifest and metadata
-# Each [[tool]] section defines one installable tool with its GitHub repo,
+# config/tools.toml — legacy tool metadata (aliases / descriptions).
+# Install source of truth is now aqua.yaml at the repo root (plus a few
+# install/tools/*.sh scripts for packages not in aqua-registry).
+# Prefer:  aqua install -a   or   ./install.sh
+#
+# Each [[tool]] section historically defined one installable tool with its GitHub repo,
 # archive pattern, and shell integration details.
 
 # Tools with shell init (fzf, atuin, zoxide, direnv, broot, starship)
+[[tool]]
+name = "chezmoi"
+repo = "twpayne/chezmoi"
+archive_pattern = "chezmoi_{ver}_linux-musl_{goarch}.tar.gz"
+description = "Dotfile manager — applies home/ tree to $HOME"
+category = "core"
+install_method = "script"
+
 [[tool]]
 name = "fzf"
 repo = "junegunn/fzf"

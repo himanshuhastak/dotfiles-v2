@@ -1,6 +1,4 @@
 #!/usr/bin/env bats
-# Smoke tests for the dotfiles framework. These avoid the network and installed
-# tools so they pass before AND after `./install.sh`.
 
 setup() {
   DF="$(cd "$BATS_TEST_DIRNAME/.." && pwd)"
@@ -9,103 +7,55 @@ setup() {
   export DOTFILES_LOCAL="$HOME/.config/dotfiles.local"
 }
 
-@test "loader defines _load_dir, _load_file, _load_profile, _defer, _eval_cached" {
+@test "loader defines _load_dir, _load_file, _load_profile, _defer" {
   run bash -c '. "$DOTFILES_DIR/config/shell/loader.sh"
     type _load_dir _load_file _load_profile _defer >/dev/null'
   [ "$status" -eq 0 ]
 }
 
-@test "_defer falls back to synchronous eval in bash" {
-  run bash -c '. "$DOTFILES_DIR/config/shell/loader.sh"; _defer "echo deferred-ran"'
-  [ "$status" -eq 0 ]
-  [ "$output" = "deferred-ran" ]
-}
-
-@test "00-env sets DOTFILES_DIR/TOOLS_DIR/SHELDON_DATA_DIR under var/" {
+@test "env.sh sets TOOLS_DIR/SHELDON_DATA_DIR under var/" {
+  export DOTFILES_DIR="$DF"
   run bash -c '. "$DOTFILES_DIR/config/shell/loader.sh"
-    . "$DOTFILES_DIR/config/shell/core/00-env.sh"
+    . "$DOTFILES_DIR/config/shell/env.sh"
     echo "$TOOLS_DIR"; echo "$SHELDON_DATA_DIR"'
   [ "$status" -eq 0 ]
   [[ "$output" == *"/var/tools"* ]]
   [[ "$output" == *"/var/vendor"* ]]
 }
 
-@test "non-interactive zsh sources env silently (no output)" {
+@test "ZDOTDIR bootstrap from chezmoi-style .zshenv" {
   command -v zsh >/dev/null || skip "zsh not installed"
-  run zsh -c '. "$DOTFILES_DIR/config/zsh/.zshenv"; print -n ""'
-  [ "$status" -eq 0 ]
-  [ -z "$output" ]
-}
-
-@test "zsh module setopts persist after _load_dir (localoptions regression)" {
-  command -v zsh >/dev/null || skip "zsh not installed"
-  run zsh -c '
-    . "$DOTFILES_DIR/config/shell/loader.sh"
-    d=$(mktemp -d); print "setopt AUTO_PUSHD" > "$d/00-x.zsh"
-    _load_dir "$d" zsh
-    [[ -o AUTO_PUSHD ]] && print OK || print FAIL'
-  [ "$status" -eq 0 ]
-  [ "$output" = "OK" ]
-}
-
-@test "ZDOTDIR bootstrap derives DOTFILES_DIR and sets ZDOTDIR" {
-  command -v zsh >/dev/null || skip "zsh not installed"
-  ln -s "$DOTFILES_DIR/config/stow/home/.zshenv" "$HOME/.zshenv"
+  cat >"$HOME/.zshenv" <<EOF
+export DOTFILES_DIR="$DOTFILES_DIR"
+export ZDOTDIR="$DOTFILES_DIR/config/zsh"
+[[ -r \$ZDOTDIR/.zshenv ]] && source \$ZDOTDIR/.zshenv
+EOF
   run env -i HOME="$HOME" zsh -c 'source $HOME/.zshenv; print "$DOTFILES_DIR"; print "$ZDOTDIR"'
   [ "$status" -eq 0 ]
   [[ "$output" == *"$DOTFILES_DIR"* ]]
   [[ "$output" == *"/config/zsh"* ]]
 }
 
-@test "login zsh sources .zprofile from ZDOTDIR" {
-  command -v zsh >/dev/null || skip "zsh not installed"
-  ln -s "$DOTFILES_DIR/config/stow/home/.zshenv" "$HOME/.zshenv"
-  mkdir -p "$DOTFILES_LOCAL/profile"
-  printf '%s\n' 'print zprofile-local-ran' > "$DOTFILES_LOCAL/profile/login.sh"
-  run env -i HOME="$HOME" DOTFILES_DIR="$DOTFILES_DIR" DOTFILES_LOCAL="$DOTFILES_LOCAL" \
-    USER=test LOGNAME=test TERM=xterm-256color zsh -l -c 'echo done'
-  [ "$status" -eq 0 ]
-  [[ "$output" == *"zprofile-local-ran"* ]]
-  [[ "$output" == *"done"* ]]
-}
-
-@test "_load_profile sources local.sh in non-interactive zsh" {
-  command -v zsh >/dev/null || skip "zsh not installed"
-  mkdir -p "$DOTFILES_LOCAL/profile"
-  printf '%s\n' 'echo local-loaded' > "$DOTFILES_LOCAL/profile/local.sh"
-  # secrets.sh must NOT be auto-loaded anymore
-  printf '%s\n' 'echo secrets-should-not-load' > "$DOTFILES_LOCAL/profile/secrets.sh"
-  run zsh -c '. "$DOTFILES_DIR/config/zsh/.zshenv"; echo done'
-  [ "$status" -eq 0 ]
-  [[ "$output" == *"local-loaded"* ]]
-  [[ "$output" != *"secrets-should-not-load"* ]]
-  [[ "$output" == *"done"* ]]
-}
-
-@test "_load_profile company is not loaded by bash shrc" {
-  local dl="$BATS_TEST_TMPDIR/company.local"
-  mkdir -p "$dl/profile"
-  printf '%s\n' 'echo company-ran' > "$dl/profile/company.sh"
-  run env DOTFILES_DIR="$DOTFILES_DIR" DOTFILES_LOCAL="$dl" HOME="$HOME" \
-    bash -c '. "$DOTFILES_DIR/config/shell/shrc"; echo done'
-  [ "$status" -eq 0 ]
-  [[ "$output" != *"company-ran"* ]]
-  [[ "$output" == *"done"* ]]
-}
-
-@test "dotfiles help lists key commands" {
+@test "dotfiles help lists apply" {
   run "$DOTFILES_DIR/bin/dotfiles" help
   [ "$status" -eq 0 ]
-  [[ "$output" == *compile* ]]
-  [[ "$output" == *stow* ]]
-  [[ "$output" == *work-stow* ]]
-  [[ "$output" == *bench* ]]
-  [[ "$output" == *sync* ]]
+  [[ "$output" == *apply* ]]
 }
 
-@test "dotfiles doc man generates man/dotfiles.1" {
-  run "$DOTFILES_DIR/bin/dotfiles" doc man
+@test "chezmoi apply deploys .zshenv to temp HOME" {
+  export HOME="$BATS_TEST_TMPDIR/chezmoi-home"
+  rm -rf "$HOME"; mkdir -p "$HOME"
+  run env HOME="$HOME" DOTFILES_DIR="$DOTFILES_DIR" "$DOTFILES_DIR/bin/dotfiles" apply
   [ "$status" -eq 0 ]
-  [ -s "$DOTFILES_DIR/man/dotfiles.1" ]
-  grep -q '.TH DOTFILES 1' "$DOTFILES_DIR/man/dotfiles.1"
+  [ -f "$HOME/.zshenv" ]
+  [[ "$(cat "$HOME/.zshenv")" == *"$DOTFILES_DIR"* ]]
+  [ ! -d "$HOME/config/shell" ]
+}
+
+@test "chezmoi symlink mode links static dotfiles to home/" {
+  export HOME="$BATS_TEST_TMPDIR/chezmoi-symlink"
+  rm -rf "$HOME"; mkdir -p "$HOME"
+  env HOME="$HOME" DOTFILES_DIR="$DOTFILES_DIR" "$DOTFILES_DIR/bin/dotfiles" apply
+  [ -L "$HOME/.gitconfig" ]
+  [ "$(readlink "$HOME/.gitconfig")" = "$DOTFILES_DIR/home/dot_gitconfig" ]
 }

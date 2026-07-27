@@ -1,30 +1,35 @@
 #!/usr/bin/env bash
-# dotfiles — manage this dotfiles framework. See `dotfiles help` or `man dotfiles`.
-#
-# Toggles are stored one-per-line in $DOTFILES_LOCAL/disabled and folded into
-# $DOTFILES_DISABLE by config/shell/core/00-env.sh on shell startup.
+# dotfiles — chezmoi-backed shell framework CLI. See: dotfiles help
 set -uo pipefail
 
-# --- locate the repo (prefer the env var; else derive from this script) ------
 self="$(cd "$(dirname "$(readlink -f "$0" 2>/dev/null || echo "$0")")" && pwd)"
 DOTFILES_DIR="${DOTFILES_DIR:-${self%/bin}}"
 SHELL_DIR="$DOTFILES_DIR/config/shell"
-STOW_DIR="$DOTFILES_DIR/config/stow"
 LOCAL_DIR="${DOTFILES_LOCAL:-$DOTFILES_DIR/local}"
 DISABLED_FILE="$LOCAL_DIR/disabled"
-WORK_STOW_DIR="$DOTFILES_DIR/var/work"
-WORK_PKG="$WORK_STOW_DIR/mounts"
-WORK_TARGET="${DOTFILES_WORK_TARGET:-$HOME/Work}"
-STOW_BIN="$DOTFILES_DIR/install/bin/stow"
+AQUA_ROOT_DIR="${AQUA_ROOT_DIR:-$DOTFILES_DIR/var/tools/aqua}"
+TOOLS_BIN="$DOTFILES_DIR/var/tools/bin"
+# Prefer legacy/musl tools (chezmoi) over aqua shims; aqua still on PATH for other CLIs.
+case ":$PATH:" in *":$AQUA_ROOT_DIR/bin:"*) ;; *) PATH="$AQUA_ROOT_DIR/bin:$PATH" ;; esac
+case ":$PATH:" in *":$TOOLS_BIN:"*) ;; *) PATH="$TOOLS_BIN:$PATH" ;; esac
+export PATH AQUA_ROOT_DIR DOTFILES_DIR TOOLS_BIN
 
-c_on=$'\033[1;32m'; c_off=$'\033[1;33m'; c_b=$'\033[1;34m'; c_r=$'\033[0m'
-[ -t 1 ] || { c_on=; c_off=; c_b=; c_r=; }
+c_on=$'\033[1;32m'
+c_off=$'\033[1;33m'
+c_b=$'\033[1;34m'
+c_r=$'\033[0m'
+[ -t 1 ] || {
+  c_on=
+  c_off=
+  c_b=
+  c_r=
+}
+die() {
+  printf 'dotfiles: %s\n' "$*" >&2
+  exit 1
+}
+_msg_ok() { printf '  %s✔%s %s\n' "$c_on" "$c_r" "$*"; }
 
-die() { printf '%s\n' "dotfiles: $*" >&2; exit 1; }
-
-# --- single source of truth for subcommands (NAME<TAB>SUMMARY) ---------------
-# Used to render `dotfiles help` AND to generate man/dotfiles.1 (so they can
-# never drift apart). Keep one line per subcommand.
 _commands() {
   cat <<'EOF'
 list	list modules and their on/off state
@@ -32,99 +37,186 @@ enable <name>...	re-enable module(s) (persists)
 disable <name>...	disable module(s) (persists)
 reload	recompile, then re-exec the current shell
 update	git pull --ff-only, then re-run install.sh
-update-tools [--all | TOOL...]	update tools from manifest or re-install specific tools
-jira <cmd> [args]	Jira YAML create/update/sync/test
-gitlab <cmd> [args]	GitLab list / invite
-secrets <cmd>		keyring: set|list|clear|export
-bugwarrior <cmd>	task sync: render|pull|uda
-invite [args]		local invite policy (local/tools/invite_policy.py)
-compile	byte-compile the zsh framework (.zwc) for faster startup
-stow [--if-needed]	(re)create the dotfiles symlinks via stow
-work-stow [--if-needed]	stow ~/Work links (from local/profile/mount.lst)
-doctor	health checks (paths, symlinks, core tools, var/)
-doctor-tools	detailed tool health check (binaries, versions, hooks)
-validate	validate configuration integrity (syntax, symlinks, profiles)
-check	lint scripts (shellcheck .sh + zsh -n/zshellcheck .zsh + actionlint + editorconfig)
-check-aliases	detect conflicting or redefined aliases
-audit	scan the working tree for secrets (betterleaks)
-test	run the bats smoke tests in test/
-bench [N]	benchmark interactive zsh startup (N runs, default 10)
-profile [--sort]	detailed startup profiling by module with timing
-sync <host:path>	rsync repo from a remote machine (includes dotfiles; see: dotfiles help sync)
-doc [man]	regenerate the man page from this help
+update-tools [--with-optional]	install/update tools (aqua + legacy)
+apply [--if-needed]	apply $HOME files via chezmoi (alias: stow)
+diff	show chezmoi diff vs $HOME
+status	show chezmoi managed file status
+vnc <cmd> [args]	TigerVNC: start|stop|status|enable|disable
+ssh <cmd> [args]	SSH: add|edit|list|sync|migrate
+profile <cmd> [args]	local/profile: add|edit|list|init
+profile-init	alias for: dotfiles profile init
+stow [--if-needed]	alias for: dotfiles apply
+jira|gitlab|secrets|bugwarrior|invite	productivity tools
+compile	byte-compile zsh framework (.zwc)
+doctor	health checks
+doctor-tools	tool versions and hooks
+validate	configuration integrity
+check	lint scripts
+audit	secret scan (betterleaks)
+test	bats smoke tests
+bench [N]	startup benchmark
+startup-profile [--sort]	per-module startup timing
+doc [man]	regenerate man page
 help	show this help
 EOF
 }
 
-# module base name = filename minus an NN- prefix and the extension
-_modname() { local b=${1##*/}; b=${b%.*}; case "$b" in [0-9][0-9]-*) b=${b#??-} ;; esac; printf '%s\n' "$b"; }
+_modname() {
+  local b=${1##*/}
+  b=${b%.*}
+  case "$b" in [0-9][0-9]-*) b=${b#??-} ;; esac
+  printf '%s\n' "$b"
+}
+_is_disabled() { [ -r "$DISABLED_FILE" ] && grep -qxF "$1" "$DISABLED_FILE"; }
 
-_is_disabled() {
-  [ -r "$DISABLED_FILE" ] || return 1
-  grep -qxF "$1" "$DISABLED_FILE"
+# --- chezmoi backend ---------------------------------------------------------
+# RHEL 8 / glibc 2.28: aqua's standard chezmoi is glibc-linked (needs 2.32+) and
+# aborts. Always prefer the musl build from install/tools/chezmoi.sh.
+_chezmoi_usable() {
+  local b=$1 out
+  [ -x "$b" ] || return 1
+  # Never use aqua-proxy for chezmoi (resolves to glibc build).
+  if [ -L "$b" ]; then
+    case "$(readlink "$b" 2>/dev/null || true)" in *aqua-proxy*) return 1 ;; esac
+  fi
+  out="$("$b" --version 2>&1)" || return 1
+  case "$out" in *GLIBC_*) return 1 ;; esac
+  return 0
 }
 
+_chezmoi_bin() {
+  local tb
+  for tb in "$TOOLS_BIN/chezmoi" "$(command -v chezmoi 2>/dev/null || true)"; do
+    [ -n "$tb" ] || continue
+    _chezmoi_usable "$tb" && return 0
+  done
+  return 1
+}
+
+CHEZMOI_SOURCE="$DOTFILES_DIR/home"
+CHEZMOI_CONFIG="$CHEZMOI_SOURCE/.chezmoi.toml"
+
+_chezmoi() {
+  local bin="" cand
+  for cand in "$TOOLS_BIN/chezmoi" "$(command -v chezmoi 2>/dev/null || true)"; do
+    [ -n "$cand" ] || continue
+    if _chezmoi_usable "$cand"; then
+      bin="$cand"
+      break
+    fi
+  done
+  if [ -z "$bin" ]; then
+    die "chezmoi missing or glibc-incompatible — run: bash install/tools/chezmoi.sh"
+  fi
+  [ -d "$CHEZMOI_SOURCE" ] || die "missing chezmoi source: $CHEZMOI_SOURCE"
+  [ -f "$CHEZMOI_CONFIG" ] || die "missing chezmoi config: $CHEZMOI_CONFIG"
+  mkdir -p "$DOTFILES_DIR/var/cache"
+  "$bin" --persistent-state "$DOTFILES_DIR/var/cache/chezmoi-state.json" \
+    --config "$CHEZMOI_CONFIG" \
+    --source "$CHEZMOI_SOURCE" "$@"
+}
+
+_stage_local_data() {
+  local src="$LOCAL_DIR/data" dst="$CHEZMOI_SOURCE/.chezmoidata"
+  mkdir -p "$dst"
+  [ -d "$src" ] && for f in "$src"/*.toml; do
+    [ -f "$f" ] || continue
+    cp "$f" "$dst/local_${f##*/}"
+  done
+  local ssh="$LOCAL_DIR/profile/ssh.local" ssh_dest="$CHEZMOI_SOURCE/dot_ssh/config.d/local.conf"
+  if [ -f "$ssh" ]; then
+    cp "$ssh" "$ssh_dest"
+  elif [ ! -s "$ssh_dest" ]; then
+    printf '%s\n' '# Machine-specific SSH — dotfiles ssh add|edit' >"$ssh_dest"
+  fi
+}
+
+_cleanup_local_data() { rm -f "$CHEZMOI_SOURCE"/.chezmoidata/local_*.toml 2>/dev/null || true; }
+
+needs_apply() {
+  local out
+  out="$(_chezmoi status --path-style=relative 2>/dev/null || true)"
+  [ -n "$out" ]
+}
+
+cmd_apply() {
+  local if_needed=0
+  [ "${1:-}" = "--if-needed" ] && {
+    if_needed=1
+    shift || true
+  }
+  if [ "$if_needed" -eq 1 ] && ! needs_apply; then return 0; fi
+  _stage_local_data
+  printf '%s==>%s chezmoi apply\n' "$c_b" "$c_r"
+  _chezmoi apply "$@" || {
+    _cleanup_local_data
+    die "apply failed"
+  }
+  _cleanup_local_data
+  _msg_ok "applied to \$HOME"
+}
+
+cmd_diff() {
+  _stage_local_data
+  _chezmoi diff "$@" || true
+  _cleanup_local_data
+}
+cmd_status() {
+  _stage_local_data
+  _chezmoi status "$@"
+  _cleanup_local_data
+}
+cmd_stow() { cmd_apply "$@"; }
+
+# --- modules -----------------------------------------------------------------
 cmd_list() {
-  local d f name extra profile_dir="$LOCAL_DIR/profile"
-  for d in "$SHELL_DIR/core" "$SHELL_DIR/zsh" "$SHELL_DIR/conf.d"; do
+  local d f name profile_dir="$LOCAL_DIR/profile"
+  for d in "$SHELL_DIR/zsh" "$SHELL_DIR/tools" "$SHELL_DIR/tools/init"; do
     [ -d "$d" ] || continue
     printf '%s%s%s\n' "$c_b" "${d#"$DOTFILES_DIR/"}" "$c_r"
     for f in "$d"/*.sh "$d"/*.zsh; do
       [ -r "$f" ] || continue
-      case "${f##*/}" in *.example|README*|disabled) continue ;; esac
+      case "${f##*/}" in *.example | README* | disabled) continue ;; esac
       name="$(_modname "$f")"
       if _is_disabled "$name"; then
         printf '  %soff%s  %s\n' "$c_off" "$c_r" "$name"
-      else
-        printf '  %s on%s  %s\n' "$c_on" "$c_r" "$name"
-      fi
+      else printf '  %s on%s  %s\n' "$c_on" "$c_r" "$name"; fi
     done
   done
-  if [ -d "$profile_dir" ]; then
-    printf '%s%s%s\n' "$c_b" "${profile_dir#"$DOTFILES_DIR/"}" "$c_r"
-    for f in "$profile_dir"/*.sh; do
-      [ -e "$f" ] || continue
-      name="$(_modname "$f")"
-      extra=""
-      if [ -L "$f" ]; then
-        extra=" -> $(readlink "$f" 2>/dev/null || true)"
-      fi
-      if _is_disabled "$name"; then
-        printf '  %soff%s  %s%s\n' "$c_off" "$c_r" "$name" "$extra"
-      else
-        printf '  %s on%s  %s%s\n' "$c_on" "$c_r" "$name" "$extra"
-      fi
-    done
-  fi
-  [ -s "$DISABLED_FILE" ] && printf '\ntoggles file: %s\n' "$DISABLED_FILE"
-  return 0
+  [ -d "$profile_dir" ] && printf '%s%s%s\n' "$c_b" "${profile_dir#"$DOTFILES_DIR/"}" "$c_r"
+  for f in "$profile_dir"/*; do
+    [ -f "$f" ] || continue
+    name="${f##*/}"
+    case "$name" in .gitignore | README.md | secrets.sh) continue ;; esac
+    printf '  %s on%s  %s\n' "$c_on" "$c_r" "$name"
+  done
 }
 
 cmd_disable() {
-  [ "$#" -gt 0 ] || die "disable: need a module name (see: dotfiles list)"
-  mkdir -p "$LOCAL_DIR"; touch "$DISABLED_FILE"
-  local m
+  [ "$#" -gt 0 ] || die "disable: need module name"
+  mkdir -p "$LOCAL_DIR"
+  touch "$DISABLED_FILE"
+  local m tmp
+  tmp="$(mktemp)"
   for m in "$@"; do
-    if grep -qxF "$m" "$DISABLED_FILE"; then
-      echo "already disabled: $m"
-    else
-      printf '%s\n' "$m" >> "$DISABLED_FILE"
-      echo "disabled: $m"
-    fi
+    grep -qxF "$m" "$DISABLED_FILE" || printf '%s\n' "$m" >>"$DISABLED_FILE"
+    echo "disabled: $m"
   done
-  echo "Run 'dotfiles reload' to apply."
+  rm -f "$tmp" 2>/dev/null
+  echo "Run: dotfiles reload"
 }
 
 cmd_enable() {
-  [ "$#" -gt 0 ] || die "enable: need a module name"
-  [ -r "$DISABLED_FILE" ] || { echo "nothing disabled"; return 0; }
-  local m tmp; tmp="$(mktemp)"
+  [ "$#" -gt 0 ] || die "enable: need module name"
+  [ -r "$DISABLED_FILE" ] || return 0
+  local m tmp
+  tmp="$(mktemp)"
   for m in "$@"; do
-    grep -vxF "$m" "$DISABLED_FILE" > "$tmp" && mv "$tmp" "$DISABLED_FILE"
+    grep -vxF "$m" "$DISABLED_FILE" >"$tmp" && mv "$tmp" "$DISABLED_FILE"
     echo "enabled: $m"
   done
-  rm -f "$tmp" 2>/dev/null || true
-  echo "Run 'dotfiles reload' to apply."
+  rm -f "$tmp" 2>/dev/null
+  echo "Run: dotfiles reload"
 }
 
 cmd_reload() {
@@ -137,432 +229,347 @@ cmd_reload() {
 cmd_compile() {
   command -v zsh >/dev/null 2>&1 || die "compile: zsh not found"
   zsh -f -c '
-    dirs=( "'"$SHELL_DIR"'"/zsh "'"$SHELL_DIR"'"/conf.d "'"$LOCAL_DIR"'"/profile )
+    dirs=( "'"$SHELL_DIR"'"/zsh "'"$SHELL_DIR"'"/tools "'"$SHELL_DIR"'"/tools/init "'"$LOCAL_DIR"'"/profile )
     n=0
     for d in $dirs; do
       [[ -d $d ]] || continue
       for f in $d/*.zsh(N) $d/*.sh(N); do
         [[ -r $f ]] || continue
-        if [[ ! -e $f.zwc || $f -nt $f.zwc ]]; then
-          zcompile -- $f 2>/dev/null && (( n++ ))
-        fi
+        if [[ ! -e $f.zwc || $f -nt $f.zwc ]]; then zcompile -- $f 2>/dev/null && (( n++ )); fi
       done
     done
-    print "compiled $n file(s) -> .zwc"
+    print "compiled $n file(s)"
   '
 }
 
-# needs_stow — true (0) if any managed target is missing or not our symlink.
-needs_stow() {
-  local pkg rel target resolved
-  for pkg in "$STOW_DIR"/*/; do
-    pkg="${pkg%/}"; pkg="${pkg##*/}"
-    [ -d "$STOW_DIR/$pkg" ] || continue
-    while IFS= read -r rel; do
-      rel="${rel#./}"; target="$HOME/$rel"
-      if [ -L "$target" ]; then
-        resolved="$(readlink -f "$target" 2>/dev/null || true)"
-        case "$resolved" in "$STOW_DIR/$pkg/"*) ;; *) return 0 ;; esac
-      elif [ ! -e "$target" ]; then
-        return 0
-      fi
-    done < <(cd "$STOW_DIR/$pkg" && find . -mindepth 1 \( -type f -o -type l \) 2>/dev/null)
+# --- profile -----------------------------------------------------------------
+_PROFILE_FILES=(local.sh login.sh aliases.sh tools.sh company.sh ssh.local vnc.local)
+
+_profile_path() { printf '%s/profile/%s' "$LOCAL_DIR" "$1"; }
+
+_profile_template() {
+  local name="$1" tpl="$DOTFILES_DIR/config/templates/profile/$name"
+  if [ -r "$tpl" ]; then
+    cat "$tpl"
+    return
+  fi
+  case "$name" in
+    *.sh) printf '# %s — edit for your machine\n' "$name" ;;
+    ssh.local) printf '# Host example\n#   HostName 10.0.0.1\n' ;;
+    vnc.local) printf '# export VNC_DISPLAY=2\n' ;;
+    *) printf '# %s\n' "$name" ;;
+  esac
+}
+
+cmd_profile_add() {
+  local name="${1:-}"
+  [ -n "$name" ] || die "profile add: need file name"
+  local path="$(_profile_path "$name")"
+  mkdir -p "$(dirname "$path")"
+  [ -e "$path" ] && die "profile add: $path exists — use: dotfiles profile edit $name"
+  _profile_template "$name" >"$path"
+  _msg_ok "created $path"
+}
+
+cmd_profile_edit() {
+  local name="${1:-}" editor
+  [ -n "$name" ] || die "profile edit: need file name"
+  local path="$(_profile_path "$name")"
+  [ ! -f "$path" ] && cmd_profile_add "$name"
+  editor="${EDITOR:-vim}"
+  command -v "$editor" >/dev/null 2>&1 || die "editor $editor not found"
+  "$editor" "$path"
+  case "$name" in ssh.local | vnc.local) cmd_apply ;; esac
+}
+
+cmd_profile_list() {
+  printf '%slocal/profile%s\n' "$c_b" "$c_r"
+  local f
+  for f in "$LOCAL_DIR/profile"/*; do
+    [ -f "$f" ] || continue
+    printf '  %s\n' "${f##*/}"
   done
-  return 1
 }
 
-cmd_stow() {
-  local step="$DOTFILES_DIR/install/steps/stow-dotfiles.sh"
-  [ -r "$step" ] || die "stow: missing $step"
-  if [ "${1:-}" = "--if-needed" ]; then
-    needs_stow || return 0
+cmd_profile_init() {
+  mkdir -p "$LOCAL_DIR/profile"
+  local name path created=0
+  for name in "${_PROFILE_FILES[@]}"; do
+    path="$(_profile_path "$name")"
+    [ -e "$path" ] && continue
+    _profile_template "$name" >"$path"
+    _msg_ok "created $path"
+    created=$((created + 1))
+  done
+  bash "$DOTFILES_DIR/install/steps/migrate-ssh-profile.sh" 2>/dev/null || true
+  cmd_apply
+  if [ "$created" -eq 0 ]; then
+    _msg_ok "profile init done (all files already existed)"
+  else
+    _msg_ok "profile init done ($created file(s) created)"
   fi
-  bash "$step"
 }
 
-# _has_mount_lst — true if a work mount list exists under local/profile/ (or legacy local/).
-_has_mount_lst() {
-  [ -r "$LOCAL_DIR/profile/mount.lst" ] || [ -r "$LOCAL_DIR/mount.lst" ]
+cmd_profile() {
+  local sub="${1:-list}"
+  shift || true
+  case "$sub" in
+    add) cmd_profile_add "$@" ;;
+    edit) cmd_profile_edit "$@" ;;
+    list) cmd_profile_list "$@" ;;
+    init) cmd_profile_init "$@" ;;
+    help | -h | --help)
+      cat <<'EOF'
+usage: dotfiles profile add|edit|list|init
+EOF
+      ;;
+    *) die "profile: unknown command $sub" ;;
+  esac
 }
 
-# needs_work_stow — true (0) if mount.lst exists and ~/Work links are missing.
-needs_work_stow() {
-  _has_mount_lst || return 1
-  [ -L "$WORK_TARGET/scratch" ] && [ -L "$WORK_TARGET/tmp" ] || return 0
-  return 1
+# --- ssh ---------------------------------------------------------------------
+cmd_ssh_list() {
+  local f="$LOCAL_DIR/profile/ssh.local"
+  [ -r "$f" ] || die "no ssh.local — run: dotfiles profile add ssh.local"
+  awk '/^Host / {print "  " $2}' "$f"
 }
 
-cmd_work_stow() {
-  local step="$DOTFILES_DIR/install/steps/stow-work.sh"
-  [ -r "$step" ] || die "work-stow: missing $step"
-  if [ "${1:-}" = "--if-needed" ]; then
-    needs_work_stow || return 0
+cmd_ssh_edit() {
+  local f="$LOCAL_DIR/profile/ssh.local" e="${EDITOR:-vim}"
+  mkdir -p "$(dirname "$f")"
+  [ -f "$f" ] || touch "$f"
+  "$e" "$f"
+  cmd_apply
+}
+
+cmd_ssh_add() {
+  local alias="${1:-}"
+  shift || true
+  local hostname="" user="" forward=""
+  [ -n "$alias" ] || die "ssh add: need alias"
+  while [ $# -gt 0 ]; do
+    case "$1" in
+      -H | --hostname)
+        hostname="$2"
+        shift 2
+        ;;
+      -u | --user)
+        user="$2"
+        shift 2
+        ;;
+      -F | --forward)
+        forward="$2"
+        shift 2
+        ;;
+      *) die "ssh add: unknown option $1" ;;
+    esac
+  done
+  local f="$LOCAL_DIR/profile/ssh.local"
+  mkdir -p "$(dirname "$f")"
+  [ -f "$f" ] || touch "$f"
+  grep -qE "^Host[[:space:]]+${alias}([[:space:]]|$)" "$f" && die "Host $alias exists"
+  {
+    printf '\nHost %s\n' "$alias"
+    [ -n "$hostname" ] && printf '  HostName %s\n' "$hostname"
+    [ -n "$user" ] && printf '  User %s\n' "$user"
+    if [ -n "$forward" ]; then
+      local lp="${forward%%:*}" rp="${forward#*:}"
+      [ "$rp" = "$forward" ] && rp="$lp"
+      printf '  LocalForward %s 127.0.0.1:%s\n' "$lp" "$rp"
+    fi
+  } >>"$f"
+  cmd_apply
+}
+
+cmd_ssh_migrate() {
+  bash "$DOTFILES_DIR/install/steps/migrate-ssh-profile.sh"
+}
+
+cmd_ssh() {
+  local sub="${1:-help}"
+  shift || true
+  case "$sub" in
+    add) cmd_ssh_add "$@" ;;
+    edit) cmd_ssh_edit "$@" ;;
+    list) cmd_ssh_list "$@" ;;
+    sync) cmd_apply "$@" ;;
+    migrate) cmd_ssh_migrate "$@" ;;
+    help | -h | --help)
+      cat <<'EOF'
+usage: dotfiles ssh add|edit|list|sync|migrate
+EOF
+      ;;
+    *) die "ssh: unknown command $sub" ;;
+  esac
+}
+
+# --- vnc (systemd user unit + vncserver fallback) -----------------------------
+cmd_vnc() {
+  local cmd="${1:-start}"
+  shift || true
+  local disp="${VNC_DISPLAY:-2}" geometry="" unit="vncserver@:${disp}.service"
+  [ -r "$LOCAL_DIR/profile/vnc.local" ] && source "$LOCAL_DIR/profile/vnc.local"
+  case "$cmd" in
+    -h | --help | help)
+      cat <<'EOF'
+usage: dotfiles vnc start|stop|status|enable|disable [display] [-g WxH]
+EOF
+      return 0
+      ;;
+    start | stop | status | enable | disable) ;;
+    *)
+      disp="$cmd"
+      cmd=start
+      ;;
+  esac
+  while [ $# -gt 0 ]; do
+    case "$1" in
+      -g | --geometry)
+        geometry="$2"
+        shift 2
+        ;;
+      -*) die "vnc: unknown option $1" ;;
+      *)
+        disp="$1"
+        shift
+        ;;
+    esac
+  done
+  geometry="${geometry:-${VNC_GEOMETRY:-}}"
+  local envf="$HOME/.vnc/vncserver.env"
+  if [ -n "$geometry" ]; then
+    mkdir -p "$HOME/.vnc"
+    printf 'VNC_EXTRA_ARGS=-geometry %s\n' "$geometry" >"$envf"
+  elif [ -f "$envf" ]; then rm -f "$envf"; fi
+  unit="vncserver@:${disp}.service"
+  if [ "${VNC_USE_SYSTEMD:-1}" != 0 ] && systemctl --user show -p LoadState --value default.target &>/dev/null; then
+    case "$cmd" in
+      start)
+        systemctl --user daemon-reload
+        systemctl --user start "$unit"
+        ;;
+      stop) systemctl --user stop "$unit" ;;
+      status) systemctl --user status "$unit" ;;
+      enable)
+        systemctl --user enable "$unit"
+        loginctl enable-linger "$USER" 2>/dev/null || true
+        ;;
+      disable) systemctl --user disable "$unit" ;;
+    esac
+    return
   fi
-  bash "$step"
+  case "$cmd" in
+    start) vncserver ":$disp" -noreset ${geometry:+-geometry "$geometry"} ;;
+    stop) vncserver -kill ":$disp" ;;
+    status) vncserver -list ;;
+    enable) die "vnc enable: needs user systemd" ;;
+    disable) die "vnc disable: needs user systemd" ;;
+  esac
 }
 
+# --- doctor (abbreviated) ----------------------------------------------------
 cmd_doctor() {
-  local ok=0 bad=0 tb
-  for tb in "$DOTFILES_DIR/var/tools/bin"; do
-    [ -d "$tb" ] && case ":$PATH:" in *":$tb:"*) ;; *) PATH="$tb:$PATH" ;; esac
-  done
-  chk() { if eval "$2" >/dev/null 2>&1; then printf '  %s✔%s %s\n' "$c_on" "$c_r" "$1"; ok=$((ok+1)); else printf '  %s✘%s %s\n' "$c_off" "$c_r" "$1"; bad=$((bad+1)); fi; }
-
-  printf '%spaths%s\n' "$c_b" "$c_r"
-  chk "DOTFILES_DIR exists ($DOTFILES_DIR)"   "[ -d '$DOTFILES_DIR' ]"
-  chk "shell framework present"               "[ -r '$SHELL_DIR/loader.sh' ]"
-  chk "ZDOTDIR config present"                "[ -r '$DOTFILES_DIR/config/zsh/.zshrc' ]"
-  chk "ZDOTDIR .zprofile present"             "[ -r '$DOTFILES_DIR/config/zsh/.zprofile' ]"
-  chk "~/.zshenv -> repo bootstrap"           "[ -L \"\$HOME/.zshenv\" ]"
-  chk "var/tools/bin populated"               "[ -d '$DOTFILES_DIR/var/tools/bin' ]"
-  chk "var/vendor populated"                  "[ -d '$DOTFILES_DIR/var/vendor' ]"
-  chk "zsh-defer present"                     "[ -r '$DOTFILES_DIR/var/vendor/zsh-defer/zsh-defer.plugin.zsh' ]"
-
-  printf '%score tools%s\n' "$c_b" "$c_r"
-  local t
-  for t in zsh starship sheldon fzf atuin zoxide eza bat rg fd; do
-    chk "$t on PATH" "command -v $t"
-  done
-  if [ -x "$DOTFILES_DIR/var/tools/bin/zsh" ]; then
-    chk "self-built zsh installed" "[ -x '$DOTFILES_DIR/var/tools/bin/zsh' ]"
-    local path_zsh resolved want
-    path_zsh="$(command -v zsh 2>/dev/null || true)"
-    want="$(readlink -f "$DOTFILES_DIR/var/tools/bin/zsh" 2>/dev/null || echo "$DOTFILES_DIR/var/tools/bin/zsh")"
-    if [ -n "$path_zsh" ]; then
-      resolved="$(readlink -f "$path_zsh" 2>/dev/null || echo "$path_zsh")"
-      if [ "$resolved" = "$want" ]; then
-        chk "zsh on PATH is self-built" true
-      else
-        printf '  %s✘%s zsh on PATH is %s (want %s) — dotfiles reload\n' \
-          "$c_off" "$c_r" "$resolved" "$want"
-        bad=$((bad+1))
-      fi
-    fi
-    printf '  %s·%s %s (use dotfiles reload or exec %s/var/tools/bin/zsh -l)\n' \
-      "$c_b" "$c_r" \
-      "$("$DOTFILES_DIR/var/tools/bin/zsh" --version 2>/dev/null | head -1)" \
-      "$DOTFILES_DIR"
+  local ok=0 bad=0
+  chk() { if eval "$2" >/dev/null 2>&1; then
+    printf '  %s✔%s %s\n' "$c_on" "$c_r" "$1"
+    ok=$((ok + 1))
   else
-    printf '  %s✘%s self-built zsh missing — run: make install\n' "$c_off" "$c_r"
-    bad=$((bad+1))
-  fi
-
-  printf '%sstow symlinks%s\n' "$c_b" "$c_r"
-  if needs_stow; then
-    printf '  %s✘%s some targets unstowed — run: dotfiles stow\n' "$c_off" "$c_r"; bad=$((bad+1))
+    printf '  %s✘%s %s\n' "$c_off" "$c_r" "$1"
+    bad=$((bad + 1))
+  fi; }
+  printf '%schezmoi / paths%s\n' "$c_b" "$c_r"
+  chk "DOTFILES_DIR" "[ -d '$DOTFILES_DIR' ]"
+  chk "home/ source tree" "[ -d '$DOTFILES_DIR/home' ]"
+  chk "chezmoi installed" "_chezmoi_bin"
+  chk "~/.zshenv present" "[ -f '$HOME/.zshenv' ]"
+  if needs_apply; then
+    printf '  %s✘%s pending changes — run: dotfiles apply\n' "$c_off" "$c_r"
+    bad=$((bad + 1))
   else
-    printf '  %s✔%s all stow targets linked\n' "$c_on" "$c_r"; ok=$((ok+1))
+    printf '  %s✔%s $HOME matches source\n' "$c_on" "$c_r"
+    ok=$((ok + 1))
   fi
-
-  printf '%slocal profile%s\n' "$c_b" "$c_r"
-  chk "profile/.gitignore present" "[ -r '$LOCAL_DIR/profile/.gitignore' ]"
-  if [ -r "$LOCAL_DIR/profile/local.sh" ]; then
-    chk "profile/local.sh present" "[ -r '$LOCAL_DIR/profile/local.sh' ]"
-  else
-    printf '  %s·%s no profile/local.sh (optional; PATH / machine env)\n' "$c_b" "$c_r"
-  fi
-  if [ -r "$LOCAL_DIR/profile/secrets.sh" ]; then
-    printf '  %s·%s profile/secrets.sh exists but is NOT loaded — move env to local.sh; tokens → dotfiles secrets\n' "$c_off" "$c_r"
-  fi
-  if _has_mount_lst; then
-    chk "profile/mount.lst present" "[ -r '$LOCAL_DIR/profile/mount.lst' ] || [ -r '$LOCAL_DIR/mount.lst' ]"
-    if [ -r "$LOCAL_DIR/profile/company.sh" ]; then
-      chk "profile/company.sh present" "[ -r '$LOCAL_DIR/profile/company.sh' ]"
-    else
-      printf '  %s·%s no profile/company.sh (optional; create local/profile/company.sh)\n' "$c_off" "$c_r"
-    fi
-  fi
-
-  if _has_mount_lst; then
-    printf '%s~/Work mounts%s\n' "$c_b" "$c_r"
-    if needs_work_stow; then
-      printf '  %s✘%s ~/Work not stowed — run: dotfiles work-stow\n' "$c_off" "$c_r"; bad=$((bad+1))
-    else
-      printf '  %s✔%s ~/Work/scratch and ~/Work/tmp linked\n' "$c_on" "$c_r"; ok=$((ok+1))
-      local w resolved
-      for w in scratch tmp; do
-        [ -L "$WORK_TARGET/$w" ] || continue
-        resolved="$(readlink -f "$WORK_TARGET/$w" 2>/dev/null || readlink "$WORK_TARGET/$w" 2>/dev/null || true)"
-        if [ -n "$resolved" ] && [ ! -e "$resolved" ]; then
-          printf '  %s!%s ~/Work/%s target missing: %s\n' "$c_off" "$c_r" "$w" "$resolved"
-          bad=$((bad+1))
-        else
-          printf '  %s·%s ~/Work/%s -> %s\n' "$c_b" "$c_r" "$w" "$resolved"
-        fi
-      done
-    fi
-  fi
-
-  printf '%slocal layout%s\n' "$c_b" "$c_r"
-  local legacy
-  if [ -r "$LOCAL_DIR/mount.lst" ] && [ ! -r "$LOCAL_DIR/profile/mount.lst" ]; then
-    printf '  %s!%s stale local/mount.lst — move to local/profile/mount.lst\n' "$c_off" "$c_r"
-    bad=$((bad+1))
-  fi
-  for legacy in profile.example work disabled.example README.example mount.lst.example; do
-    [ -e "$LOCAL_DIR/$legacy" ] || continue
-    printf '  %s!%s stale local/%s (safe to remove — see docs/STRUCTURE.md)\n' "$c_off" "$c_r" "$legacy"
-    bad=$((bad+1))
-  done
-  if [ -d "$LOCAL_DIR/work" ]; then
-    printf '  %s·%s work-stow now uses var/work/; rm -rf local/work\n' "$c_b" "$c_r"
-  elif [ ! -d "$DOTFILES_DIR/var/work" ] || [ -z "$(ls -A "$DOTFILES_DIR/var/work" 2>/dev/null)" ]; then
-    : # no legacy work dir, var/work empty or missing — fine
-  else
-    printf '  %s✔%s work-stow package in var/work/\n' "$c_on" "$c_r"; ok=$((ok+1))
-  fi
-
   printf '\n%d ok, %d issue(s)\n' "$ok" "$bad"
 }
 
-# Lint everything: shellcheck for POSIX/bash (.sh) scripts, and `zsh -n`
-# (parse/syntax check) for zsh files — shellcheck does not support zsh, so
-# `zsh -n` is the practical zsh linter (and `dotfiles compile` catches more).
 cmd_check() {
-  local rc=0 f any=0
-
-  # 1) shellcheck — .sh scripts + the bash CLI + the portable shrc base.
-  if command -v shellcheck >/dev/null 2>&1; then
-    any=1
-    local sh=()
-    while IFS= read -r f; do sh+=("$f"); done < <(
-      find "$DOTFILES_DIR/install" "$SHELL_DIR" -type f -name '*.sh' 2>/dev/null)
-    [ -r "$SHELL_DIR/shrc" ] && sh+=("$SHELL_DIR/shrc")
-    printf '%s==>%s shellcheck (%d sh files + bin/dotfiles)\n' "$c_b" "$c_r" "${#sh[@]}"
-    if shellcheck -x "$DOTFILES_DIR/bin/dotfiles" "${sh[@]}"; then
-      printf '  %s✔%s shellcheck clean\n' "$c_on" "$c_r"
-    else rc=1; fi
-  else
-    printf '  %s!%s shellcheck not found — skipping .sh lint (run ./install.sh)\n' "$c_off" "$c_r"
-  fi
-
-  # 2) collect the zsh files (modules, autoloaded functions, completions, the
-  #    config/zsh entrypoints, and the ~/.zshenv bootstrap).
-  local zf=() base
-  while IFS= read -r f; do
-    base=${f##*/}; case "$base" in .gitkeep|*.zwc|*.md) continue ;; esac
-    [ -r "$f" ] && zf+=("$f")
-  done < <(
-    find "$SHELL_DIR/zsh" "$SHELL_DIR/functions" "$SHELL_DIR/completions" \
-         "$DOTFILES_DIR/config/zsh" -type f 2>/dev/null
-    printf '%s\n' "$DOTFILES_DIR/config/stow/home/.zshenv")
-
-  # 2a) zsh -n parse check (always available when zsh is) — the floor.
-  if command -v zsh >/dev/null 2>&1; then
-    any=1; local bad=0
-    printf '%s==>%s zsh -n (%d zsh files)\n' "$c_b" "$c_r" "${#zf[@]}"
-    for f in "${zf[@]}"; do
-      if ! zsh -n "$f" 2>&1; then printf '  %s✘%s %s\n' "$c_off" "$c_r" "$f"; bad=1; rc=1; fi
-    done
-    [ "$bad" -eq 0 ] && printf '  %s✔%s zsh -n clean\n' "$c_on" "$c_r"
-  fi
-
-  # 2b) zshellcheck static analysis (shellcheck has no zsh support).
-  if command -v zshellcheck >/dev/null 2>&1; then
-    any=1
-    printf '%s==>%s zshellcheck (%d zsh files)\n' "$c_b" "$c_r" "${#zf[@]}"
-    if zshellcheck "${zf[@]}"; then printf '  %s✔%s zshellcheck clean\n' "$c_on" "$c_r"; else rc=1; fi
-  else
-    printf '  %s!%s zshellcheck not found — skipping zsh static analysis (run ./install.sh)\n' "$c_off" "$c_r"
-  fi
-
-  # 3) actionlint — GitHub workflow YAML.
-  if command -v actionlint >/dev/null 2>&1 && [ -d "$DOTFILES_DIR/.github/workflows" ]; then
-    any=1
-    printf '%s==>%s actionlint\n' "$c_b" "$c_r"
-    if actionlint -color=false "$DOTFILES_DIR"/.github/workflows/*.y*ml; then
-      printf '  %s✔%s actionlint clean\n' "$c_on" "$c_r"; else rc=1; fi
-  fi
-
-  # 4) editorconfig-checker — files vs .editorconfig (excludes via .ecrc).
-  if command -v editorconfig-checker >/dev/null 2>&1; then
-    any=1
-    printf '%s==>%s editorconfig-checker\n' "$c_b" "$c_r"
-    if ( cd "$DOTFILES_DIR" && editorconfig-checker ); then
-      printf '  %s✔%s editorconfig clean\n' "$c_on" "$c_r"; else rc=1; fi
-  fi
-
-  [ "$any" -eq 1 ] || die "check: no linters available (run ./install.sh)"
+  local rc=0
+  command -v shellcheck >/dev/null 2>&1 || die "shellcheck missing"
+  shellcheck -x "$DOTFILES_DIR/bin/dotfiles" "$DOTFILES_DIR/install"/*.sh "$DOTFILES_DIR/install/steps"/*.sh || rc=1
+  command -v zsh >/dev/null 2>&1 && find "$SHELL_DIR" "$DOTFILES_DIR/config/zsh" -name '*.zsh' -print0 |
+    xargs -0 -r zsh -n || rc=1
   return $rc
 }
 
-# Scan the working tree for committed secrets with betterleaks.
 cmd_audit() {
-  command -v betterleaks >/dev/null 2>&1 || die "audit: betterleaks not found (run ./install.sh)"
-  printf '%s==>%s betterleaks dir (working tree)\n' "$c_b" "$c_r"
-  ( cd "$DOTFILES_DIR" && betterleaks dir . -v )
+  command -v betterleaks >/dev/null 2>&1 || die "betterleaks missing"
+  (cd "$DOTFILES_DIR" && betterleaks dir . -v)
 }
 
 cmd_test() {
-  command -v bats >/dev/null 2>&1 || die "test: bats not found (install bats-core)"
-  [ -d "$DOTFILES_DIR/test" ] || die "test: no test/ dir"
+  command -v bats >/dev/null 2>&1 || die "bats missing"
   bats "$DOTFILES_DIR/test"
 }
 
 cmd_bench() {
-  command -v zsh >/dev/null 2>&1 || die "bench: zsh not found"
   local n="${1:-10}"
-
-  # Prefer hyperfine: gives proper stats (mean, stddev, min, max) with warmup.
   if command -v hyperfine >/dev/null 2>&1; then
-    echo "Using hyperfine (statistical benchmarking, warmup=3, runs=$n)…"
     hyperfine --warmup 3 --runs "$n" --shell=none 'zsh -i -c exit'
     return
   fi
-
-  # Fallback: manual timing loop.
-  local i s e t total=0
-  echo "Benchmarking $n interactive zsh startups (zsh -i -c exit)…"
-  echo "(install hyperfine for richer stats: dotfiles update-tools hyperfine)"
-  for i in $(seq 1 "$n"); do
-    s="$(date +%s.%N)"; zsh -i -c exit </dev/null >/dev/null 2>&1; e="$(date +%s.%N)"
-    t="$(awk "BEGIN{print ($e-$s)*1000}")"
-    total="$(awk "BEGIN{print $total+$t}")"
-    printf '  run %2d: %7.1f ms\n' "$i" "$t"
-  done
-  awk "BEGIN{printf \"  ----\n  avg:   %7.1f ms over %d run(s)\n\", $total/$n, $n}"
-}
-
-# Pull the repo from a remote host via rsync.
-# Uses SOURCE/ (trailing slash) so dotfiles (.gitignore, .editorconfig, …) copy
-# correctly — never use SOURCE/* (shell glob skips hidden files).
-cmd_sync() {
-  local src="${1:-${DOTFILES_SYNC_SOURCE:-}}"
-  [ -n "$src" ] || die "sync: need SOURCE (e.g. arctest5:~/dotfiles-v2/) or set DOTFILES_SYNC_SOURCE"
-  case "$src" in */) ;; *) src="${src}/" ;; esac
-
-  local rsync_cmd=rsync
-  command -v oc-rsync >/dev/null 2>&1 && rsync_cmd=oc-rsync
-  command -v "$rsync_cmd" >/dev/null 2>&1 || die "sync: rsync not found"
-
-  printf '%s==>%s syncing %s -> %s/\n' "$c_b" "$c_r" "$src" "$DOTFILES_DIR"
-  "$rsync_cmd" -avzl -e ssh \
-    --exclude 'var/' \
-    --exclude '*.zwc' \
-    --exclude '.git/' \
-    --exclude 'local/profile/*.sh' \
-    --exclude 'local/profile/mount.lst' \
-    --exclude 'local/disabled' \
-    --exclude 'local/mount.lst' \
-    "$src" "$DOTFILES_DIR/"
-}
-
-# --- man page generation (from _commands, so it never drifts) ----------------
-_gen_man() {
-  local out="$DOTFILES_DIR/man/dotfiles.1" date
-  date="$(date +%Y-%m-%d)"
-  mkdir -p "${out%/*}"
-  {
-    printf '.TH DOTFILES 1 "%s" "dotfiles" "Dotfiles Manual"\n' "$date"
-    printf '.SH NAME\ndotfiles \\- manage the dotfiles shell framework\n'
-    printf '.SH SYNOPSIS\n.B dotfiles\n.RI [ command ] " " [ args ...]\n'
-    printf '.SH DESCRIPTION\n'
-    printf 'Manage a stow-based, ZDOTDIR shell framework: toggle modules, (re)create\n'
-    printf 'symlinks, byte-compile for speed, run health checks, lint, test and benchmark.\n'
-    printf '.SH COMMANDS\n'
-    local name desc
-    while IFS=$'\t' read -r name desc; do
-      [ -n "$name" ] || continue
-      printf '.TP\n.B %s\n%s\n' "$name" "$desc"
-    done < <(_commands)
-    printf '.SH FILES\n'
-    printf '.TP\n.B $DOTFILES_DIR/config/zsh\nZDOTDIR: zsh startup files.\n'
-    printf '.TP\n.B $DOTFILES_DIR/var\nGenerated, gitignored tools/plugins/cache.\n'
-    printf '.TP\n.B $DOTFILES_LOCAL/profile\n'
-    printf 'Per-user shell drop-ins (local.sh aliases.sh company.sh mount.lst). Gitignored.\n'
-    printf 'API tokens: OS keyring via "dotfiles secrets" (not shell profile files).\n'
-    printf '.TP\n.B $DOTFILES_LOCAL/disabled\nPersisted module toggles (dotfiles disable).\n'
-    printf '.TP\n.B $DOTFILES_DIR/var/work\n'
-    printf 'Generated stow package for ~/Work links (not in config/stow/ — machine-specific).\n'
-    printf '.SH SEE ALSO\nstow(8), zsh(1), starship(1), sheldon(1)\n'
-  } > "$out"
-  echo "wrote $out"
-}
-
-cmd_doc() {
-  case "${1:-man}" in
-    man|all) _gen_man ;;
-    *) die "doc: unknown target '$1' (try: man)" ;;
-  esac
-}
-
-usage() {
-  printf '%sdotfiles%s — manage this dotfiles framework\n\n' "$c_b" "$c_r"
-  printf 'usage: dotfiles <command> [args]\n\n'
-  local name desc
-  while IFS=$'\t' read -r name desc; do
-    [ -n "$name" ] || continue
-    printf '  %s%-20s%s %s\n' "$c_on" "$name" "$c_r" "$desc"
-  done < <(_commands)
-}
-
-main() {
-  local sub="${1:-help}"; shift || true
-  case "$sub" in
-    list)            cmd_list "$@" ;;
-    enable)          cmd_enable "$@" ;;
-    disable)         cmd_disable "$@" ;;
-    reload)          cmd_reload "$@" ;;
-    compile)         cmd_compile "$@" ;;
-    stow)            cmd_stow "$@" ;;
-    work-stow)       cmd_work_stow "$@" ;;
-    doctor)          cmd_doctor "$@" ;;
-    doctor-tools)    "$DOTFILES_DIR/bin/dotfiles-tools" doctor ;;
-    validate)        "$DOTFILES_DIR/bin/dotfiles-validate" config ;;
-    check)           cmd_check "$@" ;;
-    check-aliases)   [ -x "$DOTFILES_DIR/config/shell/lib/alias-check.sh" ] && bash "$DOTFILES_DIR/config/shell/lib/alias-check.sh" check-aliases ;;
-    audit)           cmd_audit "$@" ;;
-    test)            cmd_test "$@" ;;
-    bench)           cmd_bench "$@" ;;
-    profile)         "$DOTFILES_DIR/bin/dotfiles-profile" "$@" ;;
-    sync)            cmd_sync "$@" ;;
-    update)          cmd_update "$@" ;;
-    update-tools)    cmd_update_tools "$@" ;;
-    jira)            cmd_jira "$@" ;;
-    gitlab)          cmd_gitlab "$@" ;;
-    bugwarrior)      cmd_bugwarrior "$@" ;;
-    secrets)         cmd_secrets "$@" ;;
-    invite)          cmd_invite "$@" ;;
-    doc)             cmd_doc "$@" ;;
-    help|-h|--help)  usage ;;
-    *)               die "unknown command '$sub' (try: dotfiles help)" ;;
-  esac
+  local i t
+  for i in $(seq 1 "$n"); do zsh -i -c exit </dev/null; done
 }
 
 cmd_update() {
-  command -v git >/dev/null 2>&1 || die "update: git not found"
-  echo "==> git pull --ff-only ($DOTFILES_DIR)"
-  git -C "$DOTFILES_DIR" pull --ff-only || die "update: pull failed (resolve manually)"
-  echo "==> ./install.sh"
+  git -C "$DOTFILES_DIR" pull --ff-only || die "pull failed"
   "$DOTFILES_DIR/install.sh" "$@"
 }
 
 cmd_update_tools() {
-  local install_script="$DOTFILES_DIR/install/bin/install-from-manifest.sh"
-  [ -r "$install_script" ] || die "update-tools: manifest installer not found ($install_script)"
-  
-  if [ "$#" -eq 0 ] || ([ "$#" -eq 1 ] && [ "$1" = "--all" ]); then
-    # Update all tools
-    bash "$install_script"
-  else
-    # Update specific tools (fall back to legacy per-tool scripts)
-    local install_tools="$DOTFILES_DIR/install/steps/install-tools.sh"
-    [ -x "$install_tools" ] || die "update-tools: installer not found ($install_tools)"
-    bash "$install_tools" "$@"
-  fi
+  # Prefer aqua (aqua.yaml); falls back to legacy scripts for non-registry tools.
+  bash "$DOTFILES_DIR/install/steps/install-tools.sh" "$@"
 }
 
-# Productivity tools share one Python entrypoint (keyring + venv).
 _py() {
-  local run="$DOTFILES_DIR/bin/dotfiles-run"
-  [ -x "$run" ] || die "missing $run — run: dotfiles update-tools dotfiles-tools"
-  exec "$run" -m dotfiles_tools "$@"
+  exec "$DOTFILES_DIR/bin/dotfiles-run" -m dotfiles_tools "$@"
 }
 
-cmd_jira()       { _py jira "$@"; }
-cmd_gitlab()     { _py gitlab "$@"; }
-cmd_secrets()    { _py secrets "$@"; }
-cmd_bugwarrior() { _py bugwarrior "$@"; }
-cmd_invite()     { _py invite "$@"; }
+cmd_doc() {
+  local out="$DOTFILES_DIR/man/dotfiles.1" date
+  date="$(date +%Y-%m-%d)"
+  {
+    printf '.TH DOTFILES 1 "%s" "dotfiles" "Dotfiles Manual"\n' "$date"
+    while IFS=$'\t' read -r n d; do [ -n "$n" ] && printf '.TP\n.B %s\n%s\n' "$n" "$d"; done < <(_commands)
+  } >"$out"
+  echo "wrote $out"
+}
+
+usage() {
+  printf '%sdotfiles%s — chezmoi-backed shell framework\n\nusage: dotfiles <command>\n\n' "$c_b" "$c_r"
+  local n d
+  while IFS=$'\t' read -r n d; do [ -n "$n" ] && printf '  %s%-18s%s %s\n' "$c_on" "$n" "$c_r" "$d"; done < <(_commands)
+}
+
+main() {
+  local sub="${1:-help}"
+  shift || true
+  case "$sub" in
+    list) cmd_list "$@" ;; enable) cmd_enable "$@" ;; disable) cmd_disable "$@" ;;
+    reload) cmd_reload "$@" ;; compile) cmd_compile "$@" ;;
+    apply | stow) cmd_apply "$@" ;; diff) cmd_diff "$@" ;; status) cmd_status "$@" ;;
+    vnc) cmd_vnc "$@" ;; ssh) cmd_ssh "$@" ;;
+    profile) cmd_profile "$@" ;; profile-init) cmd_profile_init "$@" ;;
+    doctor) cmd_doctor "$@" ;; doctor-tools) "$DOTFILES_DIR/bin/dotfiles-tools" doctor ;;
+    validate) "$DOTFILES_DIR/bin/dotfiles-validate" config ;;
+    check) cmd_check "$@" ;; audit) cmd_audit "$@" ;; test) cmd_test "$@" ;;
+    bench) cmd_bench "$@" ;; startup-profile) "$DOTFILES_DIR/bin/dotfiles-profile" "$@" ;;
+    update) cmd_update "$@" ;; update-tools) cmd_update_tools "$@" ;;
+    jira) _py jira "$@" ;; gitlab) _py gitlab "$@" ;; secrets) _py secrets "$@" ;;
+    bugwarrior) _py bugwarrior "$@" ;; invite) _py invite "$@" ;;
+    doc) cmd_doc "$@" ;; help | -h | --help) usage ;;
+    *) die "unknown command '$sub'" ;;
+  esac
+}
 
 main "$@"

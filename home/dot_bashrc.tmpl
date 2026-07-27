@@ -1,0 +1,9 @@
+# ~/.bashrc — optional portable bash (no zsh handoff).
+# Interactive shell of record is zsh (chsh / login shell). This file only
+# loads a light bash profile if you explicitly start bash.
+
+[[ -f /etc/bashrc ]] && . /etc/bashrc
+case $- in *i*) ;; *) return ;; esac
+
+export DOTFILES_DIR="{{ joinPath .chezmoi.sourceDir ".." | clean }}"
+[[ -r "$DOTFILES_DIR/config/shell/shrc" ]] && . "$DOTFILES_DIR/config/shell/shrc"

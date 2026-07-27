@@ -1,0 +1,8 @@
+# Managed by dotfiles — bare `chezmoi apply` uses the same source as `dotfiles apply`.
+sourceDir = "{{ .dotfiles_dir }}/home"
+mode = "symlink"
+persistentState = "{{ .dotfiles_dir }}/var/cache/chezmoi-state.json"
+
+[edit]
+command = "code"
+args = ["--wait"]

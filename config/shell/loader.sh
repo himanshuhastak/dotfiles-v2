@@ -1,6 +1,6 @@
 # config/shell/loader.sh — the framework engine (portable: bash + zsh).
 # Defines the helpers the entrypoints use to load the rest of the config.
-# Sourced very early (from core/00-env.sh); must stay POSIX-ish and silent.
+# Sourced from config/zsh/.zshenv before env.sh.
 
 # _dotfiles_disabled NAME — true if NAME is in $DOTFILES_DISABLE (space list).
 _dotfiles_disabled() {
@@ -10,17 +10,11 @@ _dotfiles_disabled() {
   return 1
 }
 
-# _load_file FILE — source one drop-in (honouring NN- prefix + $DOTFILES_DISABLE).
-# Skips unreadable files. Strips an optional NN- numeric prefix to derive the
-# module name checked against $DOTFILES_DISABLE (e.g. "30-fzf.sh" → "fzf").
-# Profile files have no NN- prefix; their basename is used directly ("company").
-# NOTE: nothing here sets LOCAL_OPTIONS, so `setopt`s inside sourced modules
-# persist globally (as intended).
+# _load_file FILE — source one module (honours $DOTFILES_DISABLE).
 _load_file() {
   local f=$1 base
   [ -r "$f" ] || return 0
   base=${f##*/}; base=${base%.*}
-  case "$base" in [0-9][0-9]-*) base=${base#??-} ;; esac
   _dotfiles_disabled "$base" && return 0
   # zsh transparently loads "$f.zwc" (bytecode) instead of "$f" when it exists
   # and is newer — build it with `dotfiles compile`. bash just sources "$f".
@@ -29,10 +23,7 @@ _load_file() {
   [ -n "${ZSH_VERSION:-}" ] && (( ${+functions[_track_module]} )) && _track_module "$base"
 }
 
-# _load_dir DIR [EXT]
-# Source DIR/*.EXT in sorted order (EXT defaults to sh), calling _load_file on
-# each. Sorted order lets numeric prefixes (00-, 30-) control load order;
-# unprefixed files are order-independent. A missing or empty dir is a no-op.
+# _load_dir DIR [EXT] — source DIR/*.EXT in sorted order (unprefixed names).
 _load_dir() {
   local d=$1 ext=${2:-sh} f
   [ -d "$d" ] || return 0

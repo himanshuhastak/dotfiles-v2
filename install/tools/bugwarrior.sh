@@ -11,5 +11,8 @@ fi
 
 # Delegate to dotfiles-tools installer (includes bugwarrior[keyring]).
 tools_script="$(dirname "$0")/dotfiles-tools.sh"
-[ -f "$tools_script" ] || { warn "bugwarrior: dotfiles-tools installer missing"; exit 1; }
+[ -f "$tools_script" ] || {
+  warn "bugwarrior: dotfiles-tools installer missing"
+  exit 1
+}
 bash "$tools_script"

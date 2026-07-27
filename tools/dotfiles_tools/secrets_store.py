@@ -49,7 +49,7 @@ REQUIRED_FOR = {
 
 
 def _dotfiles_dir():
-    return os.environ.get('DOTFILES_DIR', os.path.expanduser('~/dotfiles_v2'))
+    return os.environ.get('DOTFILES_DIR', os.path.expanduser('~/Git/dotfiles-chzemoi'))
 
 
 def file_store_path():

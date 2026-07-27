@@ -93,7 +93,11 @@ _doctor_xdg_checks() {
     "${XDG_DATA_HOME:-$HOME/.local/share}:755" \
     "${XDG_STATE_HOME:-$HOME/.local/state}:700"; do
     local path="${d%%:*}" want="${d##*:}"
-    [ -d "$path" ] || { printf '  %s✘%s missing %s\n' "${c_off:-}" "${c_r:-}" "$path"; bad=$((bad + 1)); continue; }
+    [ -d "$path" ] || {
+      printf '  %s✘%s missing %s\n' "${c_off:-}" "${c_r:-}" "$path"
+      bad=$((bad + 1))
+      continue
+    }
     mode="$(_doctor_file_mode "$path")"
     if [ "$mode" = "$want" ]; then
       chk "$path mode $want" true
@@ -102,36 +106,6 @@ _doctor_xdg_checks() {
       bad=$((bad + 1))
     fi
   done
-}
-
-_doctor_work_mount_targets() {
-  local lst line w resolved
-  for lst in "$LOCAL_DIR/profile/mount.lst" "$LOCAL_DIR/mount.lst"; do
-    [ -r "$lst" ] && break
-  done
-  [ -r "$lst" ] || return 0
-
-  while IFS= read -r line || [ -n "$line" ]; do
-    line="${line%%#*}"
-    line="${line#"${line%%[![:space:]]*}"}"
-    line="${line%"${line##*[![:space:]]}"}"
-    [ -n "$line" ] || continue
-    w="${line##*:}"
-    [ -n "$w" ] || continue
-    if [ ! -L "$WORK_TARGET/$w" ]; then
-      printf '  %s✘%s ~/Work/%s not linked — run: dotfiles work-stow\n' \
-        "${c_off:-}" "${c_r:-}" "$w"
-      bad=$((bad + 1))
-      continue
-    fi
-    resolved="$(readlink -f "$WORK_TARGET/$w" 2>/dev/null || readlink "$WORK_TARGET/$w" 2>/dev/null || true)"
-    if [ -n "$resolved" ] && [ ! -e "$resolved" ]; then
-      printf '  %s!%s ~/Work/%s target missing: %s\n' "${c_off:-}" "${c_r:-}" "$w" "$resolved"
-      bad=$((bad + 1))
-    else
-      printf '  %s·%s ~/Work/%s -> %s\n' "${c_b:-}" "${c_r:-}" "$w" "$resolved"
-    fi
-  done < "$lst"
 }
 
 _doctor_x11_checks() {

@@ -14,8 +14,8 @@ _task_cxx_version() {
   lock="$(curl -fsSL --connect-timeout 15 --max-time 45 \
     "https://raw.githubusercontent.com/GothenburgBitFactory/taskwarrior/${tag}/src/taskchampion-cpp/Cargo.lock" \
     2>/dev/null)" || lock="$(curl -fsSL --connect-timeout 15 --max-time 45 \
-    "https://raw.githubusercontent.com/GothenburgBitFactory/taskwarrior/v${ver}/src/taskchampion-cpp/Cargo.lock" \
-    2>/dev/null)" || true
+      "https://raw.githubusercontent.com/GothenburgBitFactory/taskwarrior/v${ver}/src/taskchampion-cpp/Cargo.lock" \
+      2>/dev/null)" || true
   if [ -n "$lock" ]; then
     printf '%s\n' "$lock" | awk '
       /^name = "cxx"$/ { getline; sub(/^version = "/, ""); sub(/"$/, ""); print; exit }
@@ -30,7 +30,9 @@ _task_cxx_version() {
 ensure_task_cxxbridge() {
   local root="$TOOLS_DIR/pkg/cargo-tools" tag cxx_ver
   case ":${PATH:-}:" in *":$root/bin:"*) ;; *)
-    PATH="$root/bin:${PATH:-}"; export PATH ;;
+    PATH="$root/bin:${PATH:-}"
+    export PATH
+    ;;
   esac
   command -v cxxbridge >/dev/null 2>&1 && return 0
 
@@ -50,8 +52,11 @@ ensure_task_cxxbridge() {
     warn "  then ensure $root/bin is on PATH before building"
     return 1
   fi
-  command -v cxxbridge >/dev/null 2>&1 \
-    || { warn "task: cxxbridge missing after cargo install"; return 1; }
+  command -v cxxbridge >/dev/null 2>&1 ||
+    {
+      warn "task: cxxbridge missing after cargo install"
+      return 1
+    }
   ok "cxxbridge $cxx_ver -> $root/bin/cxxbridge"
 }
 

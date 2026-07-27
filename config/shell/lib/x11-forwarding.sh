@@ -13,22 +13,22 @@ normalize_x11_authority() {
   local cur="${XAUTHORITY:-}"
   local remote=0
 
-  [ -n "${LSB_JOBID:-}" ] || [ -n "${SSH_CONNECTION:-}" ] || [ -n "${SSH_CLIENT:-}" ] \
-    && remote=1
+  [ -n "${LSB_JOBID:-}" ] || [ -n "${SSH_CONNECTION:-}" ] || [ -n "${SSH_CLIENT:-}" ] &&
+    remote=1
 
   case "$cur" in
-    /run/user/*/gdm/*|/var/run/gdm/*) remote=1 ;;
+    /run/user/*/gdm/* | /var/run/gdm/*) remote=1 ;;
   esac
 
   # Pure local desktop: keep a working non-gdm session file.
-  if [ "$remote" -eq 0 ] && [ -n "$cur" ] && [ -r "$cur" ] && [ -w "$cur" ] \
-     && xauth -f "$cur" list >/dev/null 2>&1; then
+  if [ "$remote" -eq 0 ] && [ -n "$cur" ] && [ -r "$cur" ] && [ -w "$cur" ] &&
+    xauth -f "$cur" list >/dev/null 2>&1; then
     printf '%s' "$cur"
     return 0
   fi
 
-  if [ -n "$cur" ] && [ "$cur" != "$home_auth" ] && [ -r "$cur" ] \
-     && command -v xauth >/dev/null 2>&1; then
+  if [ -n "$cur" ] && [ "$cur" != "$home_auth" ] && [ -r "$cur" ] &&
+    command -v xauth >/dev/null 2>&1; then
     touch "$home_auth" 2>/dev/null || true
     xauth -f "$home_auth" merge "$cur" 2>/dev/null || true
   fi
@@ -48,16 +48,16 @@ apply_x11_forwarding_fix() {
 
   # ffff-encoded entries alone may not satisfy all clients — always add hostname:N.
   local cookie
-  cookie="$(xauth -f "$auth" list 2>/dev/null \
-    | awk '/MIT-MAGIC-COOKIE-1/ { print $3; exit }')"
+  cookie="$(xauth -f "$auth" list 2>/dev/null |
+    awk '/MIT-MAGIC-COOKIE-1/ { print $3; exit }')"
   if [ -n "$cookie" ]; then
     xauth -f "$auth" add "$DISPLAY" . MIT-MAGIC-COOKIE-1 "$cookie" 2>/dev/null || true
   fi
 
   # SSH forwarded cookies often need family ffff on Linux.
-  xauth -f "$auth" nlist "$DISPLAY" 2>/dev/null \
-    | sed -e 's/^..../ffff/' \
-    | xauth -f "$auth" nmerge - 2>/dev/null || true
+  xauth -f "$auth" nlist "$DISPLAY" 2>/dev/null |
+    sed -e 's/^..../ffff/' |
+    xauth -f "$auth" nmerge - 2>/dev/null || true
 
   return 0
 }

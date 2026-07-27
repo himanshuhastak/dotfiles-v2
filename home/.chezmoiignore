@@ -1,0 +1,5 @@
+# Ignore staged local data copies during apply (written by dotfiles apply).
+.chezmoidata/local_*.toml
+
+# Site NFS mounts under ~/.ssh — do not chmod/manage (RHEL cluster homes).
+dot_ssh/sockets

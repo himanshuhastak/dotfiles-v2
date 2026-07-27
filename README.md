@@ -1,85 +1,42 @@
-# dotfiles
+# dotfiles-chzemoi — chezmoi-backed zsh dotfiles.
 
-A fast, modular, stow-based shell environment for zsh (with a bash script
-fallback). Self-locating, self-healing, byte-compiled, and asynchronously
-loaded for an instant prompt.
-
-## Highlights
-
-- **ZDOTDIR layout** — the only zsh file in `$HOME` is `~/.zshenv`; everything
-  else lives in-repo under `config/zsh` (no per-file symlinks).
-- **Self-locating** — entrypoints derive `$DOTFILES_DIR` from their own symlink,
-  so the repo can live anywhere.
-- **Async startup** — heavy tool hooks load after the first prompt via
-  [zsh-defer](https://github.com/romkatv/zsh-defer); `starship` stays synchronous.
-- **Modular** — numbered drop-ins under `config/shell/{core,zsh,conf.d}` and
-  `local/profile/*.sh` (secrets, aliases, company), each toggleable with `dotfiles disable <name>`.
-- **Self-owned tools** — ~30 CLIs installed into `var/tools` (never reuses
-  system/NFS binaries); zsh plugins vendored into `var/vendor`.
-- **`var/` is the only generated tree** — wipe it for a clean reinstall.
-- **Quality-gated** — `shellcheck` + `zshellcheck` (zsh), `shfmt`, `bats`,
-  `betterleaks` (secrets), `actionlint`, `editorconfig-checker`, `pre-commit`, CI.
+Chezmoi deploys `home/` → `$HOME`. Shell framework lives in `config/` (sourced, not copied).
+CLIs install via [aqua](https://aquaproj.github.io/) (`aqua.yaml`, rootless — no sudo).
 
 ## Quickstart
 
 ```sh
-git clone <repo> ~/dotfiles_v2
-cd ~/dotfiles_v2
-./install.sh            # tools + plugins + stow + fonts + compile
-exec zsh
+cd ~/Git/dotfiles-chzemoi
+./install.sh
+exec zsh -l
+dotfiles profile init
 ```
 
-## The `dotfiles` CLI
+## Commands
 
-| Command | Purpose |
-|---|---|
-| `dotfiles list` | list modules and on/off state |
-| `dotfiles enable\|disable <name>` | toggle a module (persists) |
-| `dotfiles reload` | recompile + re-exec the shell |
-| `dotfiles compile` | byte-compile the framework (`.zwc`) |
-| `dotfiles stow [--if-needed]` | (re)create symlinks |
-| `dotfiles work-stow [--if-needed]` | stow `~/Work` disk links (scratch, tmp, …) |
-| `dotfiles doctor` | health checks |
-| `dotfiles check` | lint scripts (shellcheck `.sh` + zsh -n/zshellcheck `.zsh` + actionlint + editorconfig) |
-| `dotfiles audit` | scan the working tree for secrets (betterleaks) |
-| `dotfiles test` | run the bats smoke tests |
-| `dotfiles bench [N]` | benchmark startup time |
-| `dotfiles sync <host:path>` | rsync repo from remote (copies dotfiles correctly) |
-| `dotfiles profile` | zprof timing report |
-| `dotfiles doc man` | regenerate `man dotfiles` |
+| Task | Command |
+|------|---------|
+| Apply to `$HOME` | `dotfiles apply` |
+| Update CLIs | `dotfiles update-tools` (aqua + legacy) |
+| SSH hosts | `dotfiles ssh add\|edit` |
+| VNC | `dotfiles vnc start` |
 
-Run `man dotfiles` after install for the full reference.
+`dotfiles stow` = `dotfiles apply`.
 
-## Documentation
+Static dotfiles use **chezmoi symlink mode** (`home/.chezmoi.toml`): `~/.gitconfig` and similar files symlink into `home/` so edits are live. Templates (`~/.zshenv`) still need `dotfiles apply` after changes.
 
-- [docs/STRUCTURE.md](docs/STRUCTURE.md) — layout, load order, ZDOTDIR, `var/`.
-- [docs/INSTALL.md](docs/INSTALL.md) — installing, requirements, uninstalling.
-- [docs/NAMING.md](docs/NAMING.md) — module naming + load-order conventions.
-- [docs/FUNCTIONS.md](docs/FUNCTIONS.md) — portable functions + autoloaded `functions/`.
-- [docs/PRODUCTIVITY.md](docs/PRODUCTIVITY.md) — Jira / GitLab / secrets / bugwarrior (`dotfiles jira` …).
-- [docs/QUALITY.md](docs/QUALITY.md) — linting, secret-scanning, tests, CI, pre-commit.
+## Layout
 
-## License
+```
+aqua.yaml             CLI pins (aqua — primary installer)
+home/                 chezmoi source (dot_* → ~/.*)
+config/shell/         framework: env.sh, loader.sh, zsh/, tools/
+config/zsh/           ZDOTDIR entrypoints (.zshenv, .zshrc, .zprofile)
+local/profile/        machine-specific shell + ssh.local
+install/              bootstrap; legacy scripts for non-aqua tools
+nerdfonts/            bundled fonts (installed locally, not re-fetched)
+var/tools/aqua/       aqua root (gitignored)
+bin/dotfiles          CLI
+```
 
-This repository is [MIT licensed](LICENSE). Copyright (c) 2026 Himanshu Hastak.
-
-It is personal shell configuration, shared publicly so friends can fork and
-adapt it. Paths, usernames, and machine-specific settings are examples — replace
-them with your own. Do not commit secrets; add `local/profile/*.sh` as needed (gitignored).
-
-**Third-party code** is not covered by this MIT license and remains under its
-original terms:
-
-- **Vendored plugins and libraries** installed into `var/vendor/` (zsh plugins,
-  zsh-defer, Zellij WASM plugins, etc.) keep their upstream licenses unchanged.
-- **Self-installed tools** under `var/tools/` are upstream binaries or builds;
-  each project’s license applies to that software.
-- **Fetched theme assets** (Starship, bat, delta, etc.) retain the licenses of
-  their respective projects.
-- **Adapted snippets** in this repo (e.g. clipboard helpers, keybinding patterns)
-  may include attribution in source comments; those portions remain governed by
-  their original licenses where applicable.
-
-Only the original framework, config, and installer code in this repository
-(outside `var/`) is offered under MIT unless a file states otherwise.
-
+See [docs/STRUCTURE.md](docs/STRUCTURE.md) and [docs/INSTALL.md](docs/INSTALL.md).

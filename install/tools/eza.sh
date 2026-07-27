@@ -1,5 +1,0 @@
-#!/usr/bin/env bash
-set -euo pipefail
-source "$(dirname "$0")/../common.sh"
-init_tools_dir
-install_tool eza eza-community/eza 'eza_{arch}-unknown-linux-musl.tar.gz'

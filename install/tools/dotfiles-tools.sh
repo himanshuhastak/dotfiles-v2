@@ -53,16 +53,19 @@ fi
 log "Installing dotfiles-tools → python/$PY_VER  ($PY)"
 mkdir -p "$(dirname "$venv")"
 rm -rf "$venv"
-"$PY" -m venv "$venv" || { warn "dotfiles-tools: venv creation failed"; exit 1; }
+"$PY" -m venv "$venv" || {
+  warn "dotfiles-tools: venv creation failed"
+  exit 1
+}
 "$_bin/pip" install --quiet --upgrade pip setuptools wheel >/dev/null 2>&1 || true
 
 if "$_bin/pip" install --quiet \
-    'pyyaml>=6' \
-    'python-gitlab>=4' \
-    'jira>=3' \
-    'keyring>=24' \
-    'toml>=0.10' \
-    'bugwarrior[keyring]>=1.8'; then
+  'pyyaml>=6' \
+  'python-gitlab>=4' \
+  'jira>=3' \
+  'keyring>=24' \
+  'toml>=0.10' \
+  'bugwarrior[keyring]>=1.8'; then
   _df_set_current "$TOOLS_DIR" "$PY_VER"
   ok "dotfiles-tools -> $venv ($("$PY" -V 2>&1))"
   _link_bins

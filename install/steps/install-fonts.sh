@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Install all bundled Nerd Fonts from nerdfonts/ (for starship/zellij/tmux glyphs).
+# Install all bundled Nerd Fonts from nerdfonts/ (for starship/zellij glyphs).
+# Fonts are vendored in-repo — we never re-download them.
 set -euo pipefail
 source "$(dirname "$0")/../common.sh"
 

@@ -1,39 +1,34 @@
-# Generated, variable data — all under var/ (self-owned; never committed):
-#   var/tools/   built/downloaded CLI binaries, compiled bash/zsh, venvs
-#   var/vendor/  sheldon plugin clones, zellij WASM plugins, lockfile artifacts
-#   var/cache/   transient download/build cache
-#   var/work/    generated stow package for ~/Work mount links (not in config/stow/)
-/var/
+# Generated / machine-local (never committed as chezmoi targets)
+var/
+var/cache/chezmoi-state.json
 
-# Compiled zsh bytecode (produced by `dotfiles compile`).
 *.zwc
-
-# Python bytecode (produced when running dotfiles-tools).
 __pycache__/
 *.py[cod]
 
-# Logs
 /run.log
 /var/run.log
-
-# Accidental empty junk from shell redirects or leaked GNU parallel joblogs during install.
 /Found
 /Installing
 
-# Legacy generated locations (pre-restructure; ignored during migration).
 /.tools/
 /vendor/
 /.cache/
 
-/config/stow/zellij/.config/zellij/plugins/*.wasm
 *.swp
 *~
 .DS_Store
+.uuid
 
-# Per-user overrides (gitignored). Only profile/.gitignore is tracked.
+home/dot_ssh/config.d/local.conf
+
+# Per-user (not in home/ tree)
 local/**
 !local/profile/
+!local/profile/**
 !local/profile/.gitignore
-
-# Directory UUID stamps (must not be stowed into ~/).
-.uuid
+!local/data/
+!local/data/*.example
+local/profile/secrets.sh
+local/profile/ssh.local
+local/tools/

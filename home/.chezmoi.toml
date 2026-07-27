@@ -1,0 +1,21 @@
+# Chezmoi config — lives in home/ (chezmoi source root).
+# Repo root: dotfiles-chzemoi/home/  →  target: $HOME
+
+mode = "symlink"
+
+[data]
+dotfiles_dir = "{{ joinPath .chezmoi.sourceDir \"..\" }}"
+dotfiles_local = "{{ joinPath .chezmoi.sourceDir \"../local\" }}"
+work_hosts = []
+
+[template]
+options = ["missingkey=error"]
+
+[git]
+autoCommit = false
+autoPush = false
+
+# VS Code / Cursor: --wait so `chezmoi edit` / profile edit blocks until the tab closes.
+[edit]
+command = "code"
+args = ["--wait"]

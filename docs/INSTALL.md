@@ -3,9 +3,8 @@
 ## Requirements
 
 - `git`, `curl`, a POSIX `sh`, and `zsh` (the interactive shell).
-- A C toolchain (`cmake`/`make`/compiler) only for the few source-built tools
-  (e.g. taskwarrior); everything else is a prebuilt static binary.
-- Network access to GitHub releases (for tools + plugins).
+- Network access to GitHub releases (aqua + plugins).
+- A C toolchain only for legacy source builds (`zsh`, optional `task`/`timew`).
 
 ## What it does
 
@@ -15,33 +14,37 @@
 
 Steps (see `install/steps/`):
 
-1. **install-stow** — builds the bundled stow (python, no Perl) into `install/bin`.
-2. **fetch-themes** — Catppuccin Mocha assets (starship, bat, delta).
-3. **install-tools** — installs core CLIs into `var/tools/bin` in parallel. **Required:**
-   `zsh` (built from source), `sheldon` (zsh plugin manager), and other non-optional
-   entries in `config/tools.toml`. **Skipped by default** (use `--with-optional-tools`):
-   latest `bash`, `ble.sh`, `rust`, `task`, `timew`, `bugwarrior`, and other
-   `optional = true` entries in `config/tools.toml`.
-4. **install-zellij-plugins** — downloads `zsm`, `zjframes`, `monocle`
-   into `var/vendor/zellij-plugins/` and symlinks them into the zellij stow package.
-5. **stow-dotfiles** — symlinks the `config/stow/*` packages into `$HOME`
-   (notably `~/.zshenv`, the ZDOTDIR bootstrap).
-6. **install-sheldon-plugins** — clones zsh plugins + `zsh-defer` into `var/vendor`.
-7. **install-fonts** — all bundled Nerd Fonts from `nerdfonts/` (FiraMono, JetBrains Mono, …). Remove JetBrains manually via `install/steps/remove-jetbrains-font.sh` if needed.
-8. **fix-ssh** — `~/.ssh` permissions + ensure local `.pub` keys are in `authorized_keys`.
-9. **fix-x11-forwarding** — XAUTH patch when `DISPLAY` is set (also on each zsh login).
-10. **fix-task-hooks**, then **compile** (`.zwc`) and **doc man**.
+1. **host-setup** — dirs, PATH stubs, basic host prep.
+2. **fetch-themes** — Catppuccin Mocha assets (starship, bat, delta) into `home/`.
+3. **install-tools** — [aqua](https://aquaproj.github.io/) installs CLIs from `aqua.yaml`
+   into `var/tools/aqua` (rootless, no sudo). Then legacy `install/tools/*.sh` for
+   packages not in aqua-registry (`zsh`, `broot`, `betterleaks`, `dotfiles-tools`, …).
+   Optional tools: `--with-optional-tools` (aqua tag `optional` + legacy optionals).
+4. **install-zellij-plugins** — WASM plugins into `var/vendor/zellij-plugins/`.
+5. **install-sheldon-plugins** — clones zsh plugins + `zsh-defer` into `var/vendor`.
+6. **install-fonts** — copies bundled fonts from `nerdfonts/` into
+   `~/.local/share/fonts` (never re-downloads; skip if already present).
+7. **dotfiles apply** + **compile** + **doc man**.
 
-Flags: `--skip-tools`, `--skip-fonts`, `--fetch-theme`, `--sequential-tools`, `--with-optional-tools`.
+Flags: `--skip-tools`, `--skip-fonts`, `--fetch-theme`, `--with-optional-tools`.
+
+## Tools only
+
+```sh
+dotfiles update-tools
+dotfiles update-tools --with-optional
+# or:
+bash install/steps/install-tools.sh --aqua-only
+bash install/steps/install-tools.sh --legacy-only
+```
 
 ## After install
 
 ```sh
-exec zsh          # re-execs to var/tools/bin/zsh when installed
-dotfiles reload     # recompile + re-exec self-built zsh
-dotfiles doctor      # verify paths, tools, symlinks
-man dotfiles         # full CLI reference
-dotfiles bench       # measure startup time
+exec zsh -l
+dotfiles reload     # recompile + re-exec
+dotfiles doctor
+man dotfiles
 ```
 
 ## Fresh / clean reinstall
@@ -52,69 +55,36 @@ dotfiles bench       # measure startup time
 rm -rf var && ./install.sh
 ```
 
+Fonts under `nerdfonts/` stay in the repo; wipe only if you intend to remove them.
+
 ## Where things live
 
 | Kind | Location |
 |---|---|
 | zsh config | in-repo `config/zsh` (via `ZDOTDIR`) |
-| tools | `var/tools/bin` (on `PATH`) |
+| aqua CLIs | `var/tools/aqua` (`AQUA_ROOT_DIR`, on `PATH`) |
+| legacy CLIs | `var/tools/bin` |
 | plugins | `var/vendor` |
-| caches/state | `~/.cache`, `~/.local/state` (XDG) — **not** in `var/` |
+| fonts (source) | `nerdfonts/` (bundled) |
+| fonts (installed) | `~/.local/share/fonts` |
+| caches/state | `~/.cache`, `~/.local/state` (XDG) |
 | secrets/overrides | `$DOTFILES_LOCAL/profile/*.sh` (gitignored; see NAMING.md) |
 
-Create `local/profile/*.sh` as needed — nothing is shipped as templates.
+Create `local/profile/*.sh` as needed — templates under `config/templates/profile/`.
 
-For cluster / work machines (optional):
+For cluster / work machines (optional), create `local/profile/company.sh` with your cluster module sources.
 
-```sh
-printf '/scratch/$USER:scratch\n/tmp:tmp\n' > local/profile/mount.lst
-# create local/profile/company.sh with your cluster module sources
-dotfiles work-stow
-```
+## Getting the dotfiles on another machine
 
-`mount.lst` format: `path:shortname` (one per line, `#` comments ok).
-
-## ~/Work disk links
+Clone over git — machine-specific state (`local/`, `var/`) is already gitignored, so a
+plain clone + `./install.sh` is all a new host needs:
 
 ```sh
-dotfiles work-stow    # reads local/profile/mount.lst -> ~/Work/scratch, ~/Work/tmp, …
+git clone <remote> ~/Git/dotfiles-chzemoi && cd ~/Git/dotfiles-chzemoi && ./install.sh
 ```
-
-Stow builds a temporary package under `var/work/` (generated, gitignored) and
-links it into `~/Work/`. It is **not** in `config/stow/` because mount paths are
-machine-specific and derived from your `mount.lst`.
-
-Edit `local/profile/mount.lst`, then re-run `dotfiles work-stow`.
-
-## Sync from another machine
-
-Use a **trailing slash** on the source path so hidden files (`.gitignore`, `.editorconfig`, …) copy correctly. Never use `SOURCE/*` — the shell glob skips dotfiles.
-
-```sh
-dotfiles sync arctest5:~/dotfiles-v2/
-# or set once:  export DOTFILES_SYNC_SOURCE=arctest5:~/dotfiles-v2/
-dotfiles sync
-```
-
-Equivalent manual command:
-
-```sh
-rsync -avzl -e ssh \
-  --exclude 'var/' \
-  --exclude '*.zwc' \
-  --exclude '.git/' \
-  --exclude 'local/profile/*.sh' \
-  --exclude 'local/profile/mount.lst' \
-  --exclude 'local/disabled' \
-  --exclude 'local/mount.lst' \
-  arctest5:~/dotfiles-v2/ \
-  ~/dotfiles-v2/
-```
-
-`local/profile/*` and `local/disabled` are excluded so machine-specific config stays on each host. Only `local/profile/.gitignore` is tracked in git.
 
 ## Uninstall
 
-1. `install/cleanup.sh` (unstows symlinks, backs up state).
+1. `install/cleanup.sh` (backs up state; chezmoi destroy on reset).
 2. Remove `~/.zshenv` and restore your previous shell startup files.
 3. `rm -rf var` and the repo.

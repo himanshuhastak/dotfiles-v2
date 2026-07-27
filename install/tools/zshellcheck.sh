@@ -5,11 +5,17 @@
 set -euo pipefail
 source "$(dirname "$0")/../common.sh"
 init_tools_dir
-have zshellcheck && { skip zshellcheck; exit 0; }
+have zshellcheck && {
+  skip zshellcheck
+  exit 0
+}
 case "$(uname -m)" in
-  x86_64|amd64)  a=x86_64 ;;
-  aarch64|arm64) a=arm64 ;;
-  *) warn "zshellcheck: unsupported arch $(uname -m)"; exit 1 ;;
+  x86_64 | amd64) a=x86_64 ;;
+  aarch64 | arm64) a=arm64 ;;
+  *)
+    warn "zshellcheck: unsupported arch $(uname -m)"
+    exit 1
+    ;;
 esac
 download_url zshellcheck \
   "https://github.com/afadesigns/zshellcheck/releases/latest/download/zshellcheck_Linux_${a}.tar.gz" \

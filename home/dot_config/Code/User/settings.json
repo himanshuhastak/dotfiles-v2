@@ -1,0 +1,27 @@
+{
+    "editor.fontFamily": "'JetBrainsMono NFM', 'FiraMono Nerd Font Mono', Consolas, monospace",
+    "editor.fontSize": 13,
+    "editor.fontLigatures": true,
+    "terminal.integrated.fontFamily": "'JetBrainsMono NFM', 'FiraMono Nerd Font Mono', Consolas, monospace",
+    "terminal.integrated.fontSize": 13,
+    "terminal.integrated.fontLigatures.enabled": true,
+    "files.associations": {
+        "**/home/dot_*": "plaintext",
+        "**/*.tmpl": "plaintext",
+        "**/aqua.yaml": "yaml",
+        "**/home/.chezmoi.toml": "toml",
+        "**/.chezmoi.toml": "toml"
+    },
+    "[toml]": {
+        "editor.tabSize": 2
+    },
+    "[shellscript]": {
+        "editor.tabSize": 2,
+        "editor.insertSpaces": true
+    },
+    "files.exclude": {
+        "**/var/tools/**": true,
+        "**/var/vendor/**": true,
+        "**/*.zwc": true
+    }
+}

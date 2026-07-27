@@ -1,0 +1,6 @@
+# ~/.zshenv — chezmoi-managed ZDOTDIR bootstrap (only zsh file in $HOME).
+export DOTFILES_DIR="{{ joinPath .chezmoi.sourceDir ".." | clean }}"
+export ZDOTDIR="{{ joinPath (joinPath .chezmoi.sourceDir "..") "config/zsh" | clean }}"
+
+# zsh read $HOME/.zshenv before ZDOTDIR was set; source the real tree from the repo.
+[[ -r $ZDOTDIR/.zshenv ]] && source $ZDOTDIR/.zshenv

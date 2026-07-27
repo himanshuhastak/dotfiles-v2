@@ -1,0 +1,1 @@
+# Personal aliases (interactive zsh).

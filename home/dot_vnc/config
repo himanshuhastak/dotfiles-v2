@@ -1,0 +1,5 @@
+# No fixed geometry — TigerVNC accepts client resize (AcceptSetDesktopSize, default on).
+# Resize the viewer window or go fullscreen; the remote desktop follows your monitor.
+# Optional fixed size: dotfiles vnc start -g 2560x1440  or  VNC_GEOMETRY in vnc.local
+session=gnome
+noreset

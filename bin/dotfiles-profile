@@ -8,7 +8,9 @@ DOTFILES_DIR="${DOTFILES_DIR:-${self%/bin}}"
 SHELL_DIR="$DOTFILES_DIR/config/shell"
 PROFILE_DIR="$DOTFILES_DIR/config/zsh"
 
-c_b=$'\033[1;34m'; c_r=$'\033[0m'; c_g=$'\033[1;32m'
+c_b=$'\033[1;34m'
+c_r=$'\033[0m'
+c_g=$'\033[1;32m'
 
 # Generate profiling wrapper
 _gen_profile_wrapper() {
@@ -30,7 +32,6 @@ _time_module() {
 _load_file_timed() {
   local f=$1 base
   base=${f##*/}; base=${base%.*}
-  case "$base" in [0-9][0-9]-*) base=${base#??-} ;; esac
   _time_module "$base" ". \"$f\""
 }
 
@@ -45,9 +46,14 @@ _load_dir_timed() {
 
 # Source modules with timing
 source "$DOTFILES_DIR/config/shell/loader.sh"
-source "$DOTFILES_DIR/config/shell/core/00-env.sh"
+source "$DOTFILES_DIR/config/shell/env.sh"
 _load_dir_timed "$SHELL_DIR/zsh" zsh
-_load_dir_timed "$SHELL_DIR/conf.d"
+_load_file_timed "$SHELL_DIR/tools/init.sh"
+for f in "$SHELL_DIR/tools"/*.sh; do
+  [ -r "$f" ] || continue
+  [ "${f##*/}" = init.sh ] && continue
+  _load_file_timed "$f"
+done
 
 # Print results
 {
@@ -81,14 +87,14 @@ EOF
 cmd_profile() {
   local sort_by="${1:-time}"
   local format="${2:-text}"
-  
+
   # Generate temp wrapper
   local wrapper=$(mktemp)
   trap "rm -f $wrapper" EXIT
-  _gen_profile_wrapper > "$wrapper"
-  
+  _gen_profile_wrapper >"$wrapper"
+
   echo "${c_b}Profiling shell startup...${c_r}"
-  
+
   # Run profiled zsh
   zsh -i -c "source $wrapper; exec zsh" 2>&1 | head -50
 }
@@ -96,15 +102,15 @@ cmd_profile() {
 # Compare against baseline
 cmd_compare() {
   local baseline="${1:-.dotfiles-profile-baseline}"
-  
+
   if [ ! -f "$baseline" ]; then
     warn "No baseline found. Create one: dotfiles-profile --save"
     return 1
   fi
-  
+
   echo "Running current profile..."
-  cmd_profile > /tmp/current.profile 2>&1
-  
+  cmd_profile >/tmp/current.profile 2>&1
+
   echo ""
   echo "Comparing to baseline: $baseline"
   diff -u "$baseline" /tmp/current.profile || true
@@ -113,7 +119,7 @@ cmd_compare() {
 # Save baseline
 cmd_save_baseline() {
   local output="${1:-.dotfiles-profile-baseline}"
-  cmd_profile > "$output"
+  cmd_profile >"$output"
   echo "Baseline saved to: $output"
 }
 
@@ -144,11 +150,14 @@ EOF
 main() {
   local cmd="${1:-run}"
   case "$cmd" in
-    run)     cmd_profile "${@:2}" ;;
+    run) cmd_profile "${@:2}" ;;
     compare) cmd_compare "${@:2}" ;;
-    save)    cmd_save_baseline "${@:2}" ;;
-    help)    usage ;;
-    *)       usage; exit 1 ;;
+    save) cmd_save_baseline "${@:2}" ;;
+    help) usage ;;
+    *)
+      usage
+      exit 1
+      ;;
   esac
 }
 

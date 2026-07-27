@@ -5,7 +5,7 @@ from typing import Any, Dict, Optional
 
 from dotfiles_tools.secrets_store import resolve as secret_resolve
 
-DEFAULT_DOTFILES_DIR = os.path.expanduser('~/dotfiles_v2')
+DEFAULT_DOTFILES_DIR = os.environ.get('DOTFILES_DIR', os.path.expanduser('~/Git/dotfiles-chzemoi'))
 
 
 def dotfiles_dir():

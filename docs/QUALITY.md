@@ -2,7 +2,7 @@
 
 The framework is linted, secret-scanned, tested, and benchmarked. All tools are
 installed into `var/tools` by `./install.sh` and invoked through the CLI, a
-`Makefile`, a `pre-commit` config, and GitHub Actions.
+`justfile`, a `pre-commit` config, and GitHub Actions.
 
 ## Linting — `dotfiles check`
 

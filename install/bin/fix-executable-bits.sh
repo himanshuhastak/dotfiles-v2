@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Record +x in git for every tracked shebang script (and chmod the working tree).
-# Run after adding new bin/ or install/ scripts: make fix-exec
+# Run after adding new bin/ or install/ scripts: just fix-exec
 set -euo pipefail
 
 root="$(cd "$(dirname "$0")/../.." && pwd)"

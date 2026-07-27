@@ -1,13 +1,4 @@
-.TH DOTFILES 1 "2026-07-15" "dotfiles" "Dotfiles Manual"
-.SH NAME
-dotfiles \- manage the dotfiles shell framework
-.SH SYNOPSIS
-.B dotfiles
-.RI [ command ] " " [ args ...]
-.SH DESCRIPTION
-Manage a stow-based, ZDOTDIR shell framework: toggle modules, (re)create
-symlinks, byte-compile for speed, run health checks, lint, test and benchmark.
-.SH COMMANDS
+.TH DOTFILES 1 "2026-07-27" "dotfiles" "Dotfiles Manual"
 .TP
 .B list
 list modules and their on/off state
@@ -24,84 +15,65 @@ recompile, then re-exec the current shell
 .B update
 git pull --ff-only, then re-run install.sh
 .TP
-.B update-tools [--all | TOOL...]
-update tools from manifest or re-install specific tools
+.B update-tools [--with-optional]
+install/update tools (aqua + legacy)
 .TP
-.B jira <cmd> [args]
-Jira YAML create/update/sync/test
+.B apply [--if-needed]
+apply $HOME files via chezmoi (alias: stow)
 .TP
-.B gitlab <cmd> [args]
-GitLab list / invite
+.B diff
+show chezmoi diff vs $HOME
 .TP
-.B secrets <cmd>
-keyring: set|list|clear|export
+.B status
+show chezmoi managed file status
 .TP
-.B bugwarrior <cmd>
-task sync: render|pull|uda
+.B vnc <cmd> [args]
+TigerVNC: start|stop|status|enable|disable
 .TP
-.B invite [args]
-local invite policy (local/tools/invite_policy.py)
+.B ssh <cmd> [args]
+SSH: add|edit|list|sync|migrate
 .TP
-.B compile
-byte-compile the zsh framework (.zwc) for faster startup
+.B profile <cmd> [args]
+local/profile: add|edit|list|init
+.TP
+.B profile-init
+alias for: dotfiles profile init
 .TP
 .B stow [--if-needed]
-(re)create the dotfiles symlinks via stow
+alias for: dotfiles apply
 .TP
-.B work-stow [--if-needed]
-stow ~/Work links (from local/profile/mount.lst)
+.B jira|gitlab|secrets|bugwarrior|invite
+productivity tools
+.TP
+.B compile
+byte-compile zsh framework (.zwc)
 .TP
 .B doctor
-health checks (paths, symlinks, core tools, var/)
+health checks
 .TP
 .B doctor-tools
-detailed tool health check (binaries, versions, hooks)
+tool versions and hooks
 .TP
 .B validate
-validate configuration integrity (syntax, symlinks, profiles)
+configuration integrity
 .TP
 .B check
-lint scripts (shellcheck .sh + zsh -n/zshellcheck .zsh + actionlint + editorconfig)
-.TP
-.B check-aliases
-detect conflicting or redefined aliases
+lint scripts
 .TP
 .B audit
-scan the working tree for secrets (betterleaks)
+secret scan (betterleaks)
 .TP
 .B test
-run the bats smoke tests in test/
+bats smoke tests
 .TP
 .B bench [N]
-benchmark interactive zsh startup (N runs, default 10)
+startup benchmark
 .TP
-.B profile [--sort]
-detailed startup profiling by module with timing
-.TP
-.B sync <host:path>
-rsync repo from a remote machine (includes dotfiles; see: dotfiles help sync)
+.B startup-profile [--sort]
+per-module startup timing
 .TP
 .B doc [man]
-regenerate the man page from this help
+regenerate man page
 .TP
 .B help
 show this help
-.SH FILES
-.TP
-.B $DOTFILES_DIR/config/zsh
-ZDOTDIR: zsh startup files.
-.TP
-.B $DOTFILES_DIR/var
-Generated, gitignored tools/plugins/cache.
-.TP
-.B $DOTFILES_LOCAL/profile
-Per-user shell drop-ins (local.sh aliases.sh company.sh mount.lst). Gitignored.
-API tokens: OS keyring via "dotfiles secrets" (not shell profile files).
-.TP
-.B $DOTFILES_LOCAL/disabled
-Persisted module toggles (dotfiles disable).
-.TP
-.B $DOTFILES_DIR/var/work
-Generated stow package for ~/Work links (not in config/stow/ — machine-specific).
-.SH SEE ALSO
-stow(8), zsh(1), starship(1), sheldon(1)

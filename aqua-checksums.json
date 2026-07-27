@@ -1,0 +1,129 @@
+{
+  "checksums": [
+    {
+      "id": "github_archive/github.com/bats-core/bats-core/v1.14.0",
+      "checksum": "BB537B70B15B732F6D8827DD6578E3D8CE166636CE1F18EA9A074184FCCE9177",
+      "algorithm": "sha256"
+    },
+    {
+      "id": "github_release/github.com/BurntSushi/ripgrep/15.2.0/ripgrep-15.2.0-x86_64-unknown-linux-musl.tar.gz",
+      "checksum": "33E15BCF1624B25CDD2A55813A47A2F95DBE126268203E76AA6A585D1E7B149C",
+      "algorithm": "sha256"
+    },
+    {
+      "id": "github_release/github.com/bootandy/dust/v1.2.4/dust-v1.2.4-x86_64-unknown-linux-musl.tar.gz",
+      "checksum": "4E313F9F854017E58A2ADA4C0D1774677B8CF53D63AB55A991D5871D5F504452",
+      "algorithm": "sha256"
+    },
+    {
+      "id": "github_release/github.com/casey/just/1.57.0/just-1.57.0-x86_64-unknown-linux-musl.tar.gz",
+      "checksum": "45B548094283CB9739AF8F13273B8CDDEEE869F5B4EF2BB631B1F311CB566155",
+      "algorithm": "sha256"
+    },
+    {
+      "id": "github_release/github.com/charmbracelet/glow/v2.1.2/glow_2.1.2_Linux_x86_64.tar.gz",
+      "checksum": "6063D4F2AF8A82A5F4BBA0831E165DE9381660AA8B41DF4816D0106A265B07D5",
+      "algorithm": "sha256"
+    },
+    {
+      "id": "github_release/github.com/chmln/sd/v1.1.0/sd-v1.1.0-x86_64-unknown-linux-musl.tar.gz",
+      "checksum": "02F00F4777D43E8E95B7B8D49E1A0D6E502FED4B8E79C1C8B8063857A30CAA2E",
+      "algorithm": "sha256"
+    },
+    {
+      "id": "github_release/github.com/dalance/procs/v0.14.12/procs-v0.14.12-x86_64-linux.zip",
+      "checksum": "81964FAF9D5CD0E9F399D5D0954FB6FE4D4D9F7D3CBEC4507633DF5A45B11713",
+      "algorithm": "sha256"
+    },
+    {
+      "id": "github_release/github.com/dandavison/delta/0.19.2/delta-0.19.2-x86_64-unknown-linux-musl.tar.gz",
+      "checksum": "F1EA01CA7728CE3462DEBC359F39DFC7CBBC1A63224B71FEFABF92042864AA1B",
+      "algorithm": "sha256"
+    },
+    {
+      "id": "github_release/github.com/ducaale/xh/v0.26.2/xh-v0.26.2-x86_64-unknown-linux-musl.tar.gz",
+      "checksum": "8C53B6A23435754F9E2EA8AB8C0D0296A1921404B88132CF9B364FF6E8C22A6E",
+      "algorithm": "sha256"
+    },
+    {
+      "id": "github_release/github.com/dundee/gdu/v5.36.1/gdu_linux_amd64.tgz",
+      "checksum": "9470AAB2B3A3CCAE42A75D199937C70663FF1033CE24E8CFFD85BF68F72B98BA",
+      "algorithm": "sha256"
+    },
+    {
+      "id": "github_release/github.com/editorconfig-checker/editorconfig-checker/v3.8.0/ec-linux-amd64.tar.gz",
+      "checksum": "613BD88F34165A334ADCB6B7E92A123C9DE0EADA65846D31AF63613B779FF3BE",
+      "algorithm": "sha256"
+    },
+    {
+      "id": "github_release/github.com/eza-community/eza/v0.23.5/eza_x86_64-unknown-linux-musl.tar.gz",
+      "checksum": "E06EEBAB74B73D6B7D51A796A353824B001BEA82DF077706382E100815D28904",
+      "algorithm": "sha256"
+    },
+    {
+      "id": "github_release/github.com/jqlang/jq/jq-1.8.2/jq-linux-amd64",
+      "checksum": "B1C22172DD303F3BE49E935AA56AA48A8B7A46E0BC838B4997D3BB451495870F",
+      "algorithm": "sha256"
+    },
+    {
+      "id": "github_release/github.com/kdheepak/taskwarrior-tui/v0.27.0/taskwarrior-tui-x86_64-unknown-linux-musl.tar.gz",
+      "checksum": "B10A64A977B9B289D79CC292AF8B05BC9E8E2EFD2B6DD64F0F449337C9C3D530",
+      "algorithm": "sha256"
+    },
+    {
+      "id": "github_release/github.com/koalaman/shellcheck/v0.11.0/shellcheck-v0.11.0.linux.x86_64.tar.xz",
+      "checksum": "8C3BE12B05D5C177A04C29E3C78CE89AC86F1595681CAB149B65B97C4E227198",
+      "algorithm": "sha256"
+    },
+    {
+      "id": "github_release/github.com/mikefarah/yq/v4.53.3/yq_linux_amd64",
+      "checksum": "FA52A4E758C63D38299163FBDD1EDFB4C4963247918BF9C1C5D31D84789EDED4",
+      "algorithm": "sha256"
+    },
+    {
+      "id": "github_release/github.com/muesli/duf/v0.9.1/duf_0.9.1_linux_x86_64.tar.gz",
+      "checksum": "5ADD851E7062C5E56939ABB664705E4D14FA2D06289490AFF31D51F153832DE7",
+      "algorithm": "sha256"
+    },
+    {
+      "id": "github_release/github.com/rhysd/actionlint/v1.7.12/actionlint_1.7.12_linux_amd64.tar.gz",
+      "checksum": "8ACA8DB96F1B94770F1B0D72B6DDDCB1EBB8123CB3712530B08CC387B349A3D8",
+      "algorithm": "sha256"
+    },
+    {
+      "id": "github_release/github.com/sharkdp/hyperfine/v1.20.0/hyperfine-v1.20.0-x86_64-unknown-linux-musl.tar.gz",
+      "checksum": "3285EC7959285288137043DD81DCE0DDE056227018A8277532D9A364B4F03C2B",
+      "algorithm": "sha256"
+    },
+    {
+      "id": "github_release/github.com/starship/starship/v1.26.0/starship-x86_64-unknown-linux-musl.tar.gz",
+      "checksum": "B7C232B0E8249D8E55A40BEB79C5C43A7D370F3F9408BD215DEB0170DAEAADF3",
+      "algorithm": "sha256"
+    },
+    {
+      "id": "github_release/github.com/svenstaro/miniserve/v0.35.0/miniserve-0.35.0-x86_64-unknown-linux-musl",
+      "checksum": "C630EE030D5D9D83C88C5CC72F43AE215B0C214D64FD7AFC92244FE369AF2964",
+      "algorithm": "sha256"
+    },
+    {
+      "id": "github_release/github.com/theryangeary/choose/v1.3.7/choose-x86_64-unknown-linux-musl",
+      "checksum": "F9958B15B9C5E2ED21162DCD21E514B51A03EFC8DCBF730546C3DBEF8A2EBA2A",
+      "algorithm": "sha256"
+    },
+    {
+      "id": "github_release/github.com/tldr-pages/tlrc/v1.13.1/tlrc-v1.13.1-x86_64-unknown-linux-musl.tar.gz",
+      "checksum": "E63B80E180B956AE2114C39D7FB10E607FFAA46B6D8C370D90868389A228584D",
+      "algorithm": "sha256"
+    },
+    {
+      "id": "github_release/github.com/watchexec/watchexec/v2.5.1/watchexec-2.5.1-x86_64-unknown-linux-musl.tar.xz",
+      "checksum": "AF9DF5F48D7F45083AF7A8AEBCF189C632A4A93B7F8CE3D119FD11698234F2581D1B19ED88D335412FF63F027D1538DD56ECCD8C549E6812E211F082AE694374",
+      "algorithm": "sha512"
+    },
+    {
+      "id": "github_release/github.com/zellij-org/zellij/v0.44.3/zellij-x86_64-unknown-linux-musl.tar.gz",
+      "checksum": "0F7C346788627F506C0A28296517768633CFF24FC822A739F8264B640ECAD751",
+      "algorithm": "sha256"
+    }
+  ]
+}

@@ -1,45 +1,38 @@
-# config/shell/shrc — portable interactive shell base for BASH.
-#
-# zsh does NOT use this file: its env comes from $ZDOTDIR/.zshenv and its
-# interactive setup from $ZDOTDIR/.zshrc (which loads the zsh modules + drop-ins
-# in the correct, compinit-aware order). This file exists so an interactive bash
-# (the archived ~/.bashrc.bkp fallback) still gets the shared framework. Keep it
-# POSIX-ish: no zsh-only or bash-only syntax beyond the guarded section.
-#
-# Source it by path (it is NOT stowed into $HOME):
-#   . "$DOTFILES_DIR/config/shell/shrc"
+# config/shell/shrc — portable interactive bash base (optional).
+# Login shell is zsh. Sourced from ~/.bashrc only if you start bash.
 
 if [ -z "${DOTFILES_DIR:-}" ]; then
   if [ -r "${BASH_SOURCE[0]:-}" ]; then
     _dfself="$(readlink -f "${BASH_SOURCE[0]}" 2>/dev/null || echo "${BASH_SOURCE[0]}")"
-    _dfroot="$(cd "$(dirname "$_dfself")/../.." && pwd)"
-    # shrc lives at config/shell/shrc — two levels below repo root.
-    . "$_dfroot/config/shell/resolve-dotfiles-dir.sh"
-    unset _dfself _dfroot
+    . "$(cd "$(dirname "$_dfself")" && pwd)/resolve-dotfiles-dir.sh" "$_dfself"
+    unset _dfself
   else
     . "${HOME}/.zshenv" 2>/dev/null || true
     if [ -z "${DOTFILES_DIR:-}" ] && [ -e "$HOME/.zshenv" ]; then
       _dfself="$(readlink -f "$HOME/.zshenv" 2>/dev/null || echo "$HOME/.zshenv")"
-      _dfroot="$(cd "$(dirname "$_dfself")/../../.." && pwd)"
-      . "$_dfroot/config/shell/resolve-dotfiles-dir.sh" "$_dfself"
-      unset _dfself _dfroot
+      . "$(dirname "$_dfself")/../../config/shell/resolve-dotfiles-dir.sh" "$_dfself" 2>/dev/null || true
+      unset _dfself
     fi
   fi
 fi
-: "${DOTFILES_DIR:=$HOME/dotfiles_v2}"
+: "${DOTFILES_DIR:?DOTFILES_DIR not set}"
+
 _sh="$DOTFILES_DIR/config/shell"
-[ -r "$_sh/loader.sh" ]            && . "$_sh/loader.sh"
-[ -r "$_sh/core/00-env.sh" ]       && . "$_sh/core/00-env.sh"
-[ -r "$_sh/core/10-functions.sh" ] && . "$_sh/core/10-functions.sh"
-[ -r "$_sh/core/20-aliases.sh" ]   && . "$_sh/core/20-aliases.sh"
+[ -r "$_sh/loader.sh" ]     && . "$_sh/loader.sh"
+[ -r "$_sh/env.sh" ]         && . "$_sh/env.sh"
+[ -r "$_sh/functions.sh" ]   && . "$_sh/functions.sh"
+[ -r "$_sh/aliases.sh" ]     && . "$_sh/aliases.sh"
 unset _sh
 
-# Tool drop-ins (bash gets them here; zsh loads them after compinit instead).
 if [ -n "${BASH_VERSION:-}" ]; then
-  _load_dir "$DOTFILES_DIR/config/shell/conf.d"
+  _load_file "$DOTFILES_DIR/config/shell/tools/init.sh"
+  for _f in "$DOTFILES_DIR/config/shell/tools"/*.sh; do
+    [ -f "$_f" ] || continue
+    [ "${_f##*/}" = init.sh ] && continue
+    _load_file "$_f"
+  done
+  unset _f
   _load_profile tools
 fi
 
 _load_profile aliases
-# Note: profile/company.sh is intentionally not loaded here — it sources LSF
-# and cluster env that must only run in interactive zsh, not bash scripts.

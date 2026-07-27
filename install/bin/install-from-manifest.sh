@@ -24,23 +24,38 @@ _cpu_count() {
     echo 4
   fi
 }
-_detected=$(( $(_cpu_count) > 8 ? 8 : $(_cpu_count) ))
+_detected=$(($(_cpu_count) > 8 ? 8 : $(_cpu_count)))
 PARALLEL_JOBS="${PARALLEL_JOBS:-$_detected}"
 unset _detected
 
-INSTALL_MODE="parallel"  # default; --sequential to opt out
+INSTALL_MODE="parallel" # default; --sequential to opt out
 INSTALL_OPTIONAL="${INSTALL_OPTIONAL:-0}"
 SAVE_LOCK=0
 
 # Parse options
 while [ $# -gt 0 ]; do
   case "$1" in
-    --parallel)       INSTALL_MODE="parallel"; shift ;;
-    --sequential)     INSTALL_MODE="sequential"; shift ;;
-    --with-optional)  INSTALL_OPTIONAL=1; shift ;;
-    --save-lock)      SAVE_LOCK=1; shift ;;
-    --auto)           INSTALL_MODE="parallel"; shift ;;  # legacy alias
-    *)                break ;;
+    --parallel)
+      INSTALL_MODE="parallel"
+      shift
+      ;;
+    --sequential)
+      INSTALL_MODE="sequential"
+      shift
+      ;;
+    --with-optional)
+      INSTALL_OPTIONAL=1
+      shift
+      ;;
+    --save-lock)
+      SAVE_LOCK=1
+      shift
+      ;;
+    --auto)
+      INSTALL_MODE="parallel"
+      shift
+      ;; # legacy alias
+    *) break ;;
   esac
 done
 
@@ -50,7 +65,7 @@ done
 parse_tool_entries() {
   local toml=$1
   [ -r "$toml" ] || return 1
-  
+
   awk '
     /^\[\[tool\]\]/ {
       if (name != "") print name "|" repo "|" archive_pattern "|" binname "|" install_method "|" optional "|" path_hint
@@ -128,7 +143,10 @@ _install_one() {
 _ensure_gnu_parallel() {
   local script="${DOTFILES}/install/tools/parallel.sh"
   command -v parallel >/dev/null 2>&1 && return 0
-  [ -f "$script" ] || { warn "parallel bootstrap script missing ($script)"; return 1; }
+  [ -f "$script" ] || {
+    warn "parallel bootstrap script missing ($script)"
+    return 1
+  }
   log "Installing GNU parallel first (bootstrap for parallel installs)"
   bash "$script" || return 1
   command -v parallel >/dev/null 2>&1 || return 1
@@ -138,7 +156,10 @@ _ensure_gnu_parallel() {
 # _run_parallel_batch BATCH — install manifest lines with GNU parallel or xargs -P.
 _run_parallel_batch() {
   local batch=$1 worker="$DOTFILES/install/bin/install-one-entry.sh"
-  [ -r "$worker" ] || { warn "missing parallel worker: $worker"; return 1; }
+  [ -r "$worker" ] || {
+    warn "missing parallel worker: $worker"
+    return 1
+  }
   if command -v parallel >/dev/null 2>&1; then
     printf '%s\n' "$batch" | parallel -j "$PARALLEL_JOBS" --halt soon,fail=1 \
       bash "$worker" {}
@@ -163,7 +184,7 @@ entries=$(parse_tool_entries "$MANIFEST")
 if [ "$INSTALL_OPTIONAL" != "1" ]; then
   optional_skipped=$(printf '%s\n' "$entries" | awk -F'|' '$6=="1"{c++} END{print c+0}')
   entries=$(printf '%s\n' "$entries" | awk -F'|' '$6!="1"{print}')
-  [ "${optional_skipped:-0}" -gt 0 ] && \
+  [ "${optional_skipped:-0}" -gt 0 ] &&
     log "Skipping $optional_skipped optional tool(s) (bash, ble.sh, rust, task, timew, …); use --with-optional to include"
 fi
 entry_count=$(printf '%s\n' "$entries" | grep -c . || true)
@@ -180,7 +201,7 @@ case "$INSTALL_MODE" in
     log "Installing sequentially"
     while IFS= read -r entry; do
       [ -z "$entry" ] && continue
-      bash "$DOTFILES/install/bin/install-one-entry.sh" "$entry" || \
+      bash "$DOTFILES/install/bin/install-one-entry.sh" "$entry" ||
         { warn "Failed to install from entry: $entry"; }
     done <<<"$entries"
     ;;
@@ -199,21 +220,21 @@ if [ $SAVE_LOCK -eq 1 ]; then
     printf 'generated_at = "%s"\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
     printf 'lock_version = "1.0"\n'
     printf '\n'
-    
+
     while IFS='|' read -r name repo archive pattern binname; do
       [ -z "$name" ] && continue
-      
+
       # Try to get version
       local version=""
       if command -v "$name" >/dev/null 2>&1; then
         version=$($name --version 2>&1 | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)
       fi
-      
+
       printf '[tool.%s]\n' "$name"
       printf 'version = "%s"\n' "${version:-unknown}"
       printf 'installed_at = "%s"\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
       printf '\n'
     done <<<"$entries"
-  } > "$LOCK_FILE"
+  } >"$LOCK_FILE"
   ok "Lock file updated: $LOCK_FILE"
 fi
